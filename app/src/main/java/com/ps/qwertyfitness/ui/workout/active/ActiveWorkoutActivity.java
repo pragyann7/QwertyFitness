@@ -75,9 +75,38 @@ public class ActiveWorkoutActivity extends AppCompatActivity {
         
         binding.btnSkipTimer.setOnClickListener(v -> viewModel.skipTimer());
         
+        binding.btn30s.setOnClickListener(v -> viewModel.startRestTimer(30000));
+        binding.btn60s.setOnClickListener(v -> viewModel.startRestTimer(60000));
+        binding.btn90s.setOnClickListener(v -> viewModel.startRestTimer(90000));
+        binding.btn180s.setOnClickListener(v -> viewModel.startRestTimer(180000));
+
+        binding.btnAddExercise.setOnClickListener(v -> {
+            com.ps.qwertyfitness.ui.workout.tabs.ExercisePickerBottomSheet bottomSheet = new com.ps.qwertyfitness.ui.workout.tabs.ExercisePickerBottomSheet(exercise -> {
+                ActiveExercise ae = new ActiveExercise(exercise.name, exercise.id, "8-12");
+                ae.sets.add(new com.ps.qwertyfitness.data.local.entity.WorkoutSet());
+                exercises.add(ae);
+                adapter.setItems(exercises);
+            });
+            bottomSheet.show(getSupportFragmentManager(), "ExercisePicker");
+        });
+        
         binding.btnFinishWorkout.setOnClickListener(v -> {
-            viewModel.finishWorkout(exercises);
-            finish();
+            // Stats will be calculated in ViewModel now
+            viewModel.finishWorkout(exercises, prsBroken -> {
+                // Get totals from currentSession after calculation
+                com.ps.qwertyfitness.data.local.entity.WorkoutSession session = viewModel.getCurrentSession();
+                
+                android.content.Intent intent = new android.content.Intent(this, WorkoutSummaryActivity.class);
+                intent.putExtra("PLAN_NAME", binding.toolbar.getTitle());
+                intent.putExtra("DURATION", System.currentTimeMillis() - viewModel.getStartTime());
+                intent.putExtra("VOLUME", session.totalVolume);
+                intent.putExtra("SETS", session.totalSets);
+                intent.putExtra("PRS", prsBroken);
+                intent.putExtra("SESSION_ID", viewModel.getCurrentSessionId());
+                intent.putExtra("EXERCISES", (java.io.Serializable) exercises);
+                startActivity(intent);
+                finish();
+            });
         });
     }
 }

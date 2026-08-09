@@ -38,9 +38,10 @@ public class ActiveWorkoutViewModel extends AndroidViewModel {
         currentSession.planName = planName;
         currentSession.date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         currentSession.startTime = System.currentTimeMillis();
-        
-        // In a real app, we'd insert this into the DB and get the ID
-        // For now, let's assume we have it.
+    }
+
+    public long getStartTime() {
+        return currentSession != null ? currentSession.startTime : System.currentTimeMillis();
     }
 
     public void startRestTimer(long durationMillis) {
@@ -95,29 +96,61 @@ public class ActiveWorkoutViewModel extends AndroidViewModel {
         }).start();
     }
 
-    public void finishWorkout(List<ActiveExercise> activeExercises) {
+    public void finishWorkout(List<ActiveExercise> activeExercises, java.util.function.Consumer<Integer> onComplete) {
         if (currentSession == null) return;
         
         currentSession.endTime = System.currentTimeMillis();
         
-        List<WorkoutSet> allSets = new ArrayList<>();
-        float totalVolume = 0;
-        int totalSets = 0;
-        
-        for (ActiveExercise ae : activeExercises) {
-            for (WorkoutSet set : ae.sets) {
-                if (set.isCompleted) {
-                    set.exerciseName = ae.name;
-                    allSets.add(set);
-                    totalVolume += (set.weight * set.reps);
-                    totalSets++;
+        new Thread(() -> {
+            List<WorkoutSet> allSets = new ArrayList<>();
+            float totalVolume = 0;
+            int totalSets = 0;
+            int prsBroken = 0;
+            
+            for (ActiveExercise ae : activeExercises) {
+                float previousMax = repository.getMaxWeightForExercise(ae.name);
+                float sessionMax = 0;
+                boolean hasCompletedSet = false;
+
+                for (WorkoutSet set : ae.sets) {
+                    if (set.isCompleted) {
+                        set.exerciseName = ae.name;
+                        allSets.add(set);
+                        totalVolume += (set.weight * set.reps);
+                        totalSets++;
+                        if (set.weight > sessionMax) sessionMax = set.weight;
+                        hasCompletedSet = true;
+                    }
+                }
+
+                if (hasCompletedSet && sessionMax > previousMax) {
+                    prsBroken++;
                 }
             }
+            
+            currentSession.totalVolume = (int) totalVolume;
+            currentSession.totalSets = totalSets;
+            currentSession.totalPRs = prsBroken;
+            
+            final int finalPrs = prsBroken;
+            repository.insertSession(currentSession, allSets, () -> {
+                if (onComplete != null) onComplete.accept(finalPrs);
+            });
+        }).start();
+    }
+
+    public long getCurrentSessionId() {
+        return currentSession != null ? currentSession.id : -1;
+    }
+
+    public WorkoutSession getCurrentSession() {
+        return currentSession;
+    }
+
+    public void updateSessionNote(String note) {
+        if (currentSession != null) {
+            currentSession.note = note;
+            repository.updateSession(currentSession);
         }
-        
-        currentSession.totalVolume = (int) totalVolume;
-        currentSession.totalSets = totalSets;
-        
-        repository.insertSession(currentSession, allSets);
     }
 }

@@ -55,4 +55,21 @@ public class HomeViewModel extends AndroidViewModel {
     public LiveData<List<LoggedFood>> getLoggedFoodsToday() {
         return repository.getLoggedFoodsForDate(today);
     }
+
+    // Reminder methods
+    public LiveData<List<com.ps.qwertyfitness.data.local.entity.Reminder>> getAllReminders() {
+        return repository.getAllReminders();
+    }
+
+    public void insertReminder(com.ps.qwertyfitness.data.local.entity.Reminder reminder, Runnable onDone) {
+        repository.insertReminder(reminder, onDone);
+    }
+
+    public void updateReminder(com.ps.qwertyfitness.data.local.entity.Reminder reminder) {
+        repository.updateReminder(reminder);
+    }
+
+    public void deleteReminder(com.ps.qwertyfitness.data.local.entity.Reminder reminder) {
+        repository.deleteReminder(reminder);
+    }
 }

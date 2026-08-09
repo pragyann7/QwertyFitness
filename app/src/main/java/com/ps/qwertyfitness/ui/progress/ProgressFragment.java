@@ -25,11 +25,25 @@ public class ProgressFragment extends Fragment {
     private ExercisePRAdapter prAdapter;
     private boolean isShowingAllHistory = false;
     private java.util.List<com.ps.qwertyfitness.data.local.entity.WeightEntry> allWeightEntries = new java.util.ArrayList<>();
+    
+    private androidx.activity.result.ActivityResultLauncher<String> getContentLauncher;
+    private String pendingCategory;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentProgressBinding.inflate(inflater, container, false);
+        
+        getContentLauncher = registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.GetContent(), uri -> {
+            if (uri != null && pendingCategory != null) {
+                String internalPath = com.ps.qwertyfitness.utils.ImageUtils.saveImageToInternalStorage(requireContext(), uri);
+                if (internalPath != null) {
+                    String date = new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new java.util.Date());
+                    viewModel.addProgressPhoto(internalPath, pendingCategory, date);
+                }
+            }
+        });
+        
         return binding.getRoot();
     }
 
@@ -47,6 +61,7 @@ public class ProgressFragment extends Fragment {
         binding.recyclerPrs.setAdapter(prAdapter);
 
         setupTimelineFilter();
+        setupPhotoObservers();
         
         viewModel.getLatestWeight().observe(getViewLifecycleOwner(), weightEntry -> {
             if (weightEntry != null) {
@@ -145,6 +160,47 @@ public class ProgressFragment extends Fragment {
             updateHistoryList();
             binding.btnViewAllWeight.setVisibility(View.GONE);
         });
+
+        binding.cardPhotoFront.setOnClickListener(v -> selectPhoto("Front"));
+        binding.cardPhotoSide.setOnClickListener(v -> selectPhoto("Side"));
+        binding.cardPhotoBack.setOnClickListener(v -> selectPhoto("Back"));
+
+        binding.btnComparePhotos.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(getActivity(), ComparePhotosActivity.class);
+            startActivity(intent);
+        });
+
+        binding.btnViewGallery.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(getActivity(), PhotoGalleryActivity.class);
+            startActivity(intent);
+        });
+    }
+
+    private void selectPhoto(String category) {
+        pendingCategory = category;
+        getContentLauncher.launch("image/*");
+    }
+
+    private void setupPhotoObservers() {
+        viewModel.getLatestPhotoByCategory("Front").observe(getViewLifecycleOwner(), photo -> {
+            updatePhotoSlot(binding.imgPhotoFront, binding.placeholderFront, photo);
+        });
+        viewModel.getLatestPhotoByCategory("Side").observe(getViewLifecycleOwner(), photo -> {
+            updatePhotoSlot(binding.imgPhotoSide, binding.placeholderSide, photo);
+        });
+        viewModel.getLatestPhotoByCategory("Back").observe(getViewLifecycleOwner(), photo -> {
+            updatePhotoSlot(binding.imgPhotoBack, binding.placeholderBack, photo);
+        });
+    }
+
+    private void updatePhotoSlot(android.widget.ImageView imageView, View placeholder, com.ps.qwertyfitness.data.local.entity.ProgressPhoto photo) {
+        if (photo != null && photo.imagePath != null) {
+            com.ps.qwertyfitness.utils.ImageUtils.loadThumbnail(imageView, photo.imagePath);
+            placeholder.setVisibility(View.GONE);
+        } else {
+            imageView.setImageBitmap(null);
+            placeholder.setVisibility(View.VISIBLE);
+        }
     }
 
     private void updateHistoryList() {

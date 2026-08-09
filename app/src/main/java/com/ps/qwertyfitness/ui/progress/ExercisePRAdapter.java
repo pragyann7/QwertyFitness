@@ -4,22 +4,36 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ps.qwertyfitness.data.local.entity.ExercisePR;
 import com.ps.qwertyfitness.databinding.ItemExercisePrBinding;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class ExercisePRAdapter extends RecyclerView.Adapter<ExercisePRAdapter.ViewHolder> {
+public class ExercisePRAdapter extends ListAdapter<ExercisePR, ExercisePRAdapter.ViewHolder> {
     
-    private List<ExercisePR> items = new ArrayList<>();
+    public ExercisePRAdapter() {
+        super(DIFF_CALLBACK);
+    }
+
+    private static final DiffUtil.ItemCallback<ExercisePR> DIFF_CALLBACK = new DiffUtil.ItemCallback<ExercisePR>() {
+        @Override
+        public boolean areItemsTheSame(@NonNull ExercisePR oldItem, @NonNull ExercisePR newItem) {
+            return oldItem.exerciseName.equals(newItem.exerciseName);
+        }
+
+        @Override
+        public boolean areContentsTheSame(@NonNull ExercisePR oldItem, @NonNull ExercisePR newItem) {
+            return oldItem.maxWeight == newItem.maxWeight;
+        }
+    };
 
     public void setItems(List<ExercisePR> items) {
-        this.items = items != null ? items : new ArrayList<>();
-        notifyDataSetChanged();
+        submitList(items);
     }
 
     @NonNull
@@ -31,14 +45,9 @@ public class ExercisePRAdapter extends RecyclerView.Adapter<ExercisePRAdapter.Vi
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        ExercisePR item = items.get(position);
+        ExercisePR item = getItem(position);
         holder.binding.textExerciseName.setText(item.exerciseName);
         holder.binding.textPrWeight.setText(String.format(Locale.getDefault(), "%.1f kg", item.maxWeight));
-    }
-
-    @Override
-    public int getItemCount() {
-        return items.size();
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

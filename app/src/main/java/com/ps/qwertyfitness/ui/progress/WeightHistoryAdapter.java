@@ -4,22 +4,36 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ps.qwertyfitness.data.local.entity.WeightEntry;
 import com.ps.qwertyfitness.databinding.ItemWeightHistoryBinding;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class WeightHistoryAdapter extends RecyclerView.Adapter<WeightHistoryAdapter.ViewHolder> {
+public class WeightHistoryAdapter extends ListAdapter<WeightEntry, WeightHistoryAdapter.ViewHolder> {
     
-    private List<WeightEntry> items = new ArrayList<>();
+    public WeightHistoryAdapter() {
+        super(DIFF_CALLBACK);
+    }
+
+    private static final DiffUtil.ItemCallback<WeightEntry> DIFF_CALLBACK = new DiffUtil.ItemCallback<WeightEntry>() {
+        @Override
+        public boolean areItemsTheSame(@NonNull WeightEntry oldItem, @NonNull WeightEntry newItem) {
+            return oldItem.id == newItem.id;
+        }
+
+        @Override
+        public boolean areContentsTheSame(@NonNull WeightEntry oldItem, @NonNull WeightEntry newItem) {
+            return oldItem.weight == newItem.weight && oldItem.date.equals(newItem.date);
+        }
+    };
 
     public void setItems(List<WeightEntry> items) {
-        this.items = items;
-        notifyDataSetChanged();
+        submitList(items);
     }
 
     @NonNull
@@ -31,14 +45,9 @@ public class WeightHistoryAdapter extends RecyclerView.Adapter<WeightHistoryAdap
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        WeightEntry item = items.get(position);
+        WeightEntry item = getItem(position);
         holder.binding.textWeight.setText(String.format(Locale.getDefault(), "%.1f kg", item.weight));
         holder.binding.textDate.setText(item.date);
-    }
-
-    @Override
-    public int getItemCount() {
-        return items.size();
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

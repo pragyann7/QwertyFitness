@@ -95,6 +95,14 @@ public class ProgressViewModel extends AndroidViewModel {
         return repository.getPhotosByCategory(category);
     }
 
+    public LiveData<ProgressPhoto> getLatestPhotoByCategory(String category) {
+        return repository.getLatestPhotoByCategory(category);
+    }
+
+    public LiveData<List<ProgressPhoto>> getAllPhotos() {
+        return repository.getAllPhotos();
+    }
+
     public void addProgressPhoto(String path, String category, String date) {
         ProgressPhoto photo = new ProgressPhoto();
         photo.imagePath = path;
@@ -102,5 +110,12 @@ public class ProgressViewModel extends AndroidViewModel {
         photo.date = date;
         photo.timestamp = System.currentTimeMillis();
         repository.insertPhoto(photo);
+    }
+
+    public void deletePhoto(ProgressPhoto photo) {
+        if (photo.imagePath != null) {
+            com.ps.qwertyfitness.utils.ImageUtils.deleteImage(photo.imagePath);
+        }
+        repository.deletePhoto(photo);
     }
 }

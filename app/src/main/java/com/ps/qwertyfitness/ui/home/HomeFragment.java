@@ -19,6 +19,8 @@ import java.util.Locale;
 import android.content.Intent;
 import com.ps.qwertyfitness.ui.workout.active.ActiveWorkoutActivity;
 import com.ps.qwertyfitness.data.local.entity.LoggedFood;
+import com.ps.qwertyfitness.data.local.entity.Reminder;
+import com.ps.qwertyfitness.data.repository.FitnessRepository;
 import java.util.List;
 
 public class HomeFragment extends Fragment {
@@ -65,7 +67,9 @@ public class HomeFragment extends Fragment {
                 });
 
                 homeViewModel.getLoggedFoodsToday().observe(getViewLifecycleOwner(), loggedFoods -> {
-                    updateSchedule(loggedFoods);
+                    homeViewModel.getAllReminders().observe(getViewLifecycleOwner(), reminders -> {
+                        updateSchedule(reminders, loggedFoods);
+                    });
                 });
             }
         });
@@ -75,15 +79,52 @@ public class HomeFragment extends Fragment {
             intent.putExtra("PLAN_NAME", "Push Day");
             startActivity(intent);
         });
+
+        binding.btnManageSchedule.setOnClickListener(v -> {
+            startActivity(new Intent(getActivity(), com.ps.qwertyfitness.ui.schedule.ScheduleActivity.class));
+        });
     }
 
-    private void updateSchedule(List<LoggedFood> loggedFoods) {
+    private void updateSchedule(List<Reminder> reminders, List<LoggedFood> loggedFoods) {
         binding.layoutSchedule.removeAllViews();
         
-        addMealToSchedule("08:00", "Breakfast", "650 kcal", isLogged(loggedFoods, "Breakfast"));
-        addMealToSchedule("13:00", "Lunch", "700 kcal", isLogged(loggedFoods, "Lunch"));
-        addMealToSchedule("18:00", "Push Workout", "Upcoming", false);
-        addMealToSchedule("20:00", "Dinner", "750 kcal", isLogged(loggedFoods, "Dinner"));
+        if (reminders == null || reminders.isEmpty()) {
+            addMealToSchedule("08:00", "Breakfast", "No reminders set", false, "MEAL", "○", 0);
+        } else {
+            for (Reminder reminder : reminders) {
+                if (!reminder.enabled) continue;
+                
+                boolean isDone = isLogged(loggedFoods, reminder.title);
+                String subtitle;
+                String statusText;
+                int statusIcon;
+                long now = System.currentTimeMillis();
+
+                if (reminder.snoozeUntil > now) {
+                    String snoozeTime = new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new java.util.Date(reminder.snoozeUntil));
+                    subtitle = "LATER (" + snoozeTime + ")";
+                    statusText = "○";
+                    statusIcon = 0;
+                } else if ("WATER".equals(reminder.type) && reminder.intervalMinutes > 0) {
+                    long nextTime = com.ps.qwertyfitness.utils.ReminderManager.calculateNextTriggerTime(reminder);
+                    String timeStr = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date(nextTime));
+                    
+                    if (nextTime > getEndOfDay()) {
+                        subtitle = "Tomorrow: " + timeStr;
+                    } else {
+                        subtitle = "Interval: " + reminder.intervalMinutes + "m";
+                    }
+                    statusText = timeStr;
+                    statusIcon = R.drawable.ic_refresh;
+                } else {
+                    subtitle = isDone ? "Completed" : "Upcoming";
+                    statusText = isDone ? "✓" : "○";
+                    statusIcon = 0;
+                }
+
+                addMealToSchedule(reminder.time, reminder.title, subtitle, isDone, reminder.type, statusText, statusIcon);
+            }
+        }
     }
 
     private boolean isLogged(List<LoggedFood> logs, String type) {
@@ -94,15 +135,51 @@ public class HomeFragment extends Fragment {
         return false;
     }
 
-    private void addMealToSchedule(String time, String title, String subtitle, boolean isDone) {
+    private long getEndOfDay() {
+        java.util.Calendar c = java.util.Calendar.getInstance();
+        c.set(java.util.Calendar.HOUR_OF_DAY, 23);
+        c.set(java.util.Calendar.MINUTE, 59);
+        c.set(java.util.Calendar.SECOND, 59);
+        return c.getTimeInMillis();
+    }
+
+    private void addMealToSchedule(String time, String title, String subtitle, boolean isDone, String type, String statusText, int statusIcon) {
         ItemScheduleBinding itemBinding = ItemScheduleBinding.inflate(getLayoutInflater(), binding.layoutSchedule, false);
         itemBinding.textTime.setText(time);
         itemBinding.textTitle.setText(title);
         itemBinding.textSubtitle.setText(subtitle);
-        itemBinding.textStatus.setText(isDone ? "✓" : "○");
+        itemBinding.textStatus.setText(statusText);
+        
+        if (statusIcon != 0) {
+            itemBinding.imgStatusIcon.setImageResource(statusIcon);
+            itemBinding.imgStatusIcon.setVisibility(View.VISIBLE);
+        } else {
+            itemBinding.imgStatusIcon.setVisibility(View.GONE);
+        }
+
         itemBinding.textStatus.setTextColor(isDone ? 
                 getResources().getColor(R.color.accent_electric_lime, null) : 
                 getResources().getColor(R.color.text_muted, null));
+        
+        if (!"WATER".equals(type)) {
+            itemBinding.getRoot().setOnClickListener(v -> {
+                if (!isDone) {
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Mark as Done")
+                            .setMessage("Did you complete this: " + title + "?")
+                            .setPositiveButton("Yes", (dialog, which) -> {
+                                LoggedFood food = new LoggedFood();
+                                food.foodName = title;
+                                food.mealType = title; 
+                                food.date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
+                                food.calories = 0;
+                                new FitnessRepository(requireActivity().getApplication()).logFood(food);
+                            })
+                            .setNegativeButton("No", null)
+                            .show();
+                }
+            });
+        }
         
         binding.layoutSchedule.addView(itemBinding.getRoot());
     }

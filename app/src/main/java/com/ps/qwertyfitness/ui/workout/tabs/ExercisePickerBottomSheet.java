@@ -28,6 +28,12 @@ public class ExercisePickerBottomSheet extends BottomSheetDialogFragment {
         void onExercisePicked(Exercise exercise);
     }
 
+    public ExercisePickerBottomSheet() {}
+
+    public ExercisePickerBottomSheet(OnExercisePickedListener listener) {
+        this.listener = listener;
+    }
+
     public void setListener(OnExercisePickedListener listener) {
         this.listener = listener;
     }

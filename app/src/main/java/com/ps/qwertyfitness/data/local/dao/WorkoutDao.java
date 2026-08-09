@@ -56,6 +56,9 @@ public interface WorkoutDao {
     @Query("SELECT * FROM workout_sets WHERE exerciseName = :exerciseName AND isCompleted = 1 ORDER BY id DESC LIMIT 1")
     WorkoutSet getLatestSetForExercise(String exerciseName);
 
+    @Query("SELECT MAX(weight) FROM workout_sets WHERE exerciseName = :exerciseName AND isCompleted = 1")
+    float getMaxWeightForExerciseSync(String exerciseName);
+
     @Query("SELECT exerciseName, MAX(weight) as maxWeight FROM workout_sets WHERE isCompleted = 1 GROUP BY exerciseName")
     LiveData<List<ExercisePR>> getPersonalRecords();
 }

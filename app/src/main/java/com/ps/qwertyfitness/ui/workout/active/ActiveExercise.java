@@ -2,10 +2,11 @@ package com.ps.qwertyfitness.ui.workout.active;
 
 import com.ps.qwertyfitness.data.local.entity.WorkoutSet;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ActiveExercise {
+public class ActiveExercise implements Serializable {
     public String name;
     public long exerciseId;
     public String targetReps;

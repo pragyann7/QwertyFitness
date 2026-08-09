@@ -184,11 +184,28 @@
             app:strokeWidth="0dp">
 
             <LinearLayout
-                android:id="@+id/layout_schedule"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="20dp" />
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:id="@+id/layout_schedule"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_manage_schedule"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="VIEW FULL SCHEDULE"
+                    android:textColor="@color/accent_electric_lime"
+                    app:rippleColor="@color/surface_elevated_soft_slate" />
+
+            </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 

@@ -24,6 +24,9 @@ public class FitnessCalculator {
 
         float tdee = bmr * multiplier;
 
+        profile.bmr = (int) bmr;
+        profile.tdee = (int) tdee;
+
         // Goal Adjustment
         int targetCalories;
         if ("Lose Fat".equalsIgnoreCase(profile.goal)) {

@@ -15,6 +15,9 @@ public interface ProgressPhotoDao {
     @Query("SELECT * FROM progress_photos WHERE category = :category ORDER BY timestamp DESC")
     LiveData<List<ProgressPhoto>> getPhotosByCategory(String category);
 
+    @Query("SELECT * FROM progress_photos WHERE category = :category ORDER BY timestamp DESC LIMIT 1")
+    LiveData<ProgressPhoto> getLatestPhotoByCategory(String category);
+
     @Query("SELECT * FROM progress_photos ORDER BY timestamp DESC")
     LiveData<List<ProgressPhoto>> getAllPhotos();
 

@@ -43,18 +43,22 @@ public class ProfileFragment extends Fragment {
                 binding.textTargetProtein.setText(String.format(Locale.getDefault(), "%d g", profile.proteinTarget));
                 binding.textTargetCarbs.setText(String.format(Locale.getDefault(), "%d g", profile.carbTarget));
                 binding.textTargetFat.setText(String.format(Locale.getDefault(), "%d g", profile.fatTarget));
+
+                // Calculator details
+                binding.textCalcBmr.setText(String.format(Locale.getDefault(), "BMR: %,d kcal", profile.bmr));
+                binding.textCalcTdee.setText(String.format(Locale.getDefault(), "TDEE: %,d kcal", profile.tdee));
             }
+        });
+
+        binding.btnExpandInfo.setOnClickListener(v -> {
+            boolean isVisible = binding.layoutCalcDetails.getVisibility() == View.VISIBLE;
+            binding.layoutCalcDetails.setVisibility(isVisible ? View.GONE : View.VISIBLE);
+            binding.imgExpandArrow.animate().rotation(isVisible ? -90 : 90).setDuration(200).start();
         });
         
         binding.btnEditProfile.setOnClickListener(v -> {
-            // Placeholder for Edit Profile Dialog
-            // For now, let's allow a quick goal swap to test the ripple effect
-            com.ps.qwertyfitness.data.local.entity.UserProfile current = viewModel.getUserProfile().getValue();
-            if (current != null) {
-                if ("Lose Fat".equals(current.goal)) current.goal = "Lean Bulk";
-                else current.goal = "Lose Fat";
-                viewModel.updateProfile(current);
-            }
+            // New Activity for Edit Profile
+            startActivity(new android.content.Intent(getActivity(), EditProfileActivity.class));
         });
     }
 

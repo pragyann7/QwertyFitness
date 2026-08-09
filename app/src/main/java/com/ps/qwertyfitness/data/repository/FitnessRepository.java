@@ -9,6 +9,7 @@ import com.ps.qwertyfitness.data.local.dao.BodyMeasurementDao;
 import com.ps.qwertyfitness.data.local.dao.ExerciseDao;
 import com.ps.qwertyfitness.data.local.dao.FoodDao;
 import com.ps.qwertyfitness.data.local.dao.ProgressPhotoDao;
+import com.ps.qwertyfitness.data.local.dao.ReminderDao;
 import com.ps.qwertyfitness.data.local.dao.UserDao;
 import com.ps.qwertyfitness.data.local.dao.WeightDao;
 import com.ps.qwertyfitness.data.local.dao.WorkoutDao;
@@ -19,6 +20,7 @@ import com.ps.qwertyfitness.data.local.entity.LoggedFood;
 import com.ps.qwertyfitness.data.local.entity.PlanExercise;
 import com.ps.qwertyfitness.data.local.entity.PlanExerciseWithDetails;
 import com.ps.qwertyfitness.data.local.entity.ProgressPhoto;
+import com.ps.qwertyfitness.data.local.entity.Reminder;
 import com.ps.qwertyfitness.data.local.entity.UserProfile;
 import com.ps.qwertyfitness.data.local.entity.WeightEntry;
 import com.ps.qwertyfitness.data.local.entity.WorkoutPlan;
@@ -37,6 +39,7 @@ public class FitnessRepository {
     private final ExerciseDao exerciseDao;
     private final BodyMeasurementDao bodyMeasurementDao;
     private final ProgressPhotoDao progressPhotoDao;
+    private final ReminderDao reminderDao;
     private final LiveData<UserProfile> userProfile;
     private final ExecutorService databaseWriteExecutor = Executors.newFixedThreadPool(4);
 
@@ -49,6 +52,7 @@ public class FitnessRepository {
         exerciseDao = db.exerciseDao();
         bodyMeasurementDao = db.bodyMeasurementDao();
         progressPhotoDao = db.progressPhotoDao();
+        reminderDao = db.reminderDao();
         userProfile = userDao.getUserProfile();
     }
 
@@ -118,6 +122,10 @@ public class FitnessRepository {
         return workoutDao.getLatestSetForExercise(exerciseName);
     }
 
+    public float getMaxWeightForExercise(String exerciseName) {
+        return workoutDao.getMaxWeightForExerciseSync(exerciseName);
+    }
+
     public LiveData<List<com.ps.qwertyfitness.data.local.entity.ExercisePR>> getPersonalRecords() {
         return workoutDao.getPersonalRecords();
     }
@@ -136,14 +144,21 @@ public class FitnessRepository {
         return exerciseDao.searchExercises("%" + query + "%");
     }
 
-    public void insertSession(WorkoutSession session, List<WorkoutSet> sets) {
+    public void insertSession(WorkoutSession session, List<WorkoutSet> sets, Runnable onComplete) {
         databaseWriteExecutor.execute(() -> {
             long sessionId = workoutDao.insertSession(session);
             for (WorkoutSet set : sets) {
                 set.sessionId = sessionId;
                 workoutDao.insertSet(set);
             }
+            if (onComplete != null) {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(onComplete);
+            }
         });
+    }
+
+    public void updateSession(WorkoutSession session) {
+        databaseWriteExecutor.execute(() -> workoutDao.updateSession(session));
     }
 
     // Weight methods
@@ -181,7 +196,50 @@ public class FitnessRepository {
         return progressPhotoDao.getPhotosByCategory(category);
     }
 
+    public LiveData<ProgressPhoto> getLatestPhotoByCategory(String category) {
+        return progressPhotoDao.getLatestPhotoByCategory(category);
+    }
+
+    public LiveData<List<ProgressPhoto>> getAllPhotos() {
+        return progressPhotoDao.getAllPhotos();
+    }
+
     public void insertPhoto(ProgressPhoto photo) {
         databaseWriteExecutor.execute(() -> progressPhotoDao.insert(photo));
+    }
+
+    public void deletePhoto(ProgressPhoto photo) {
+        databaseWriteExecutor.execute(() -> progressPhotoDao.delete(photo));
+    }
+
+    // Reminder methods
+    public LiveData<List<Reminder>> getAllReminders() {
+        return reminderDao.getAllReminders();
+    }
+
+    public List<Reminder> getEnabledRemindersSync() {
+        return reminderDao.getEnabledRemindersSync();
+    }
+
+    public void insertReminder(Reminder reminder, Runnable onDone) {
+        databaseWriteExecutor.execute(() -> {
+            long id = reminderDao.insert(reminder);
+            reminder.id = id;
+            if (onDone != null) {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(onDone);
+            }
+        });
+    }
+
+    public void updateReminder(Reminder reminder) {
+        databaseWriteExecutor.execute(() -> reminderDao.update(reminder));
+    }
+
+    public void updateSnoozeTime(long id, long snoozeTime) {
+        databaseWriteExecutor.execute(() -> reminderDao.updateSnoozeTime(id, snoozeTime));
+    }
+
+    public void deleteReminder(Reminder reminder) {
+        databaseWriteExecutor.execute(() -> reminderDao.delete(reminder));
     }
 }

@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -11,6 +16,21 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.QwertyFitness">
+        <activity
+            android:name=".ui.progress.ComparePhotosActivity"
+            android:exported="false"
+            android:theme="@style/Theme.QwertyFitness" />
+
+        <activity
+            android:name=".ui.progress.PhotoGalleryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.QwertyFitness" />
+
+        <activity
+            android:name=".ui.progress.ViewPhotoActivity"
+            android:exported="false"
+            android:theme="@style/Theme.QwertyFitness" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true" />
@@ -27,13 +47,39 @@
             android:exported="false"
             android:theme="@style/Theme.QwertyFitness" />
         <activity
+            android:name=".ui.workout.active.WorkoutSummaryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.QwertyFitness" />
+        <activity
             android:name=".ui.workout.tabs.CreatePlanActivity"
             android:exported="false"
             android:theme="@style/Theme.QwertyFitness" />
         <activity
+            android:name=".ui.profile.EditProfileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.QwertyFitness" />
+
+        <activity
             android:name=".ui.workout.tabs.PlanDetailActivity"
             android:exported="false"
             android:theme="@style/Theme.QwertyFitness" />
+
+        <activity
+            android:name=".ui.schedule.ScheduleActivity"
+            android:exported="false"
+            android:theme="@style/Theme.QwertyFitness" />
+
+        <receiver
+            android:name=".receivers.ReminderReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".receivers.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

@@ -89,22 +89,21 @@ public class HomeFragment extends Fragment {
         binding.layoutSchedule.removeAllViews();
         
         if (reminders == null || reminders.isEmpty()) {
-            addMealToSchedule("08:00", "Breakfast", "No reminders set", false, "MEAL", "○", 0);
+            addMealToSchedule("08:00", "Breakfast", "No reminders set", false, "MEAL", "○", 0, -1);
         } else {
+            long now = System.currentTimeMillis();
             for (Reminder reminder : reminders) {
                 if (!reminder.enabled) continue;
                 
                 boolean isDone = isLogged(loggedFoods, reminder.title);
                 String subtitle;
                 String statusText;
-                int statusIcon;
-                long now = System.currentTimeMillis();
+                int statusIcon = 0;
 
-                if (reminder.snoozeUntil > now) {
+                if (reminder.snoozeUntil > now && !isDone) {
                     String snoozeTime = new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new java.util.Date(reminder.snoozeUntil));
                     subtitle = "LATER (" + snoozeTime + ")";
                     statusText = "○";
-                    statusIcon = 0;
                 } else if ("WATER".equals(reminder.type) && reminder.intervalMinutes > 0) {
                     long nextTime = com.ps.qwertyfitness.utils.ReminderManager.calculateNextTriggerTime(reminder);
                     String timeStr = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date(nextTime));
@@ -119,10 +118,9 @@ public class HomeFragment extends Fragment {
                 } else {
                     subtitle = isDone ? "Completed" : "Upcoming";
                     statusText = isDone ? "✓" : "○";
-                    statusIcon = 0;
                 }
 
-                addMealToSchedule(reminder.time, reminder.title, subtitle, isDone, reminder.type, statusText, statusIcon);
+                addMealToSchedule(reminder.time, reminder.title, subtitle, isDone, reminder.type, statusText, statusIcon, reminder.id);
             }
         }
     }
@@ -143,7 +141,7 @@ public class HomeFragment extends Fragment {
         return c.getTimeInMillis();
     }
 
-    private void addMealToSchedule(String time, String title, String subtitle, boolean isDone, String type, String statusText, int statusIcon) {
+    private void addMealToSchedule(String time, String title, String subtitle, boolean isDone, String type, String statusText, int statusIcon, long reminderId) {
         ItemScheduleBinding itemBinding = ItemScheduleBinding.inflate(getLayoutInflater(), binding.layoutSchedule, false);
         itemBinding.textTime.setText(time);
         itemBinding.textTitle.setText(title);
@@ -168,12 +166,22 @@ public class HomeFragment extends Fragment {
                             .setTitle("Mark as Done")
                             .setMessage("Did you complete this: " + title + "?")
                             .setPositiveButton("Yes", (dialog, which) -> {
+                                FitnessRepository repo = new FitnessRepository(requireActivity().getApplication());
+                                // Log item to mark as done
                                 LoggedFood food = new LoggedFood();
                                 food.foodName = title;
                                 food.mealType = title; 
                                 food.date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
                                 food.calories = 0;
-                                new FitnessRepository(requireActivity().getApplication()).logFood(food);
+                                repo.logFood(food);
+                                
+                                // Reset snooze since it's done now
+                                if (reminderId != -1) {
+                                    new Thread(() -> {
+                                        repo.updateSnoozeTime(reminderId, 0);
+                                        com.ps.qwertyfitness.utils.ReminderManager.cancelSnooze(requireContext(), reminderId);
+                                    }).start();
+                                }
                             })
                             .setNegativeButton("No", null)
                             .show();

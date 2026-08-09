@@ -17,4 +17,8 @@ public class Reminder {
     public int intervalMinutes; // 0 for once a day, > 0 for repeating (e.g., 20)
     public String endTime; // HH:mm (Optional, for interval reminders)
     public long snoozeUntil; // Timestamp until which the reminder is snoozed
+    
+    public int targetProtein;
+    public int targetCarbs;
+    public int targetFat;
 }

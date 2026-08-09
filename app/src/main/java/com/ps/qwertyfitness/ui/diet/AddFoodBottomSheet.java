@@ -29,7 +29,14 @@ public class AddFoodBottomSheet extends BottomSheetDialogFragment {
     private DietViewModel viewModel;
     private FoodItem selectedFood;
     private FoodSearchAdapter adapter;
+    private String preselectedMealType = null;
     private final String[] mealTypes = {"Breakfast", "Lunch", "Dinner", "Snack"};
+
+    public static AddFoodBottomSheet newInstance(String mealType) {
+        AddFoodBottomSheet fragment = new AddFoodBottomSheet();
+        fragment.preselectedMealType = mealType;
+        return fragment;
+    }
 
     @Nullable
     @Override
@@ -45,7 +52,12 @@ public class AddFoodBottomSheet extends BottomSheetDialogFragment {
         
         ArrayAdapter<String> mealAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, mealTypes);
         binding.dropdownMealType.setAdapter(mealAdapter);
-        binding.dropdownMealType.setText(mealTypes[3], false); // Default to Snack
+        
+        if (preselectedMealType != null) {
+            binding.dropdownMealType.setText(preselectedMealType, false);
+        } else {
+            binding.dropdownMealType.setText(mealTypes[3], false); // Default to Snack
+        }
 
         adapter = new FoodSearchAdapter(food -> {
             selectedFood = food;

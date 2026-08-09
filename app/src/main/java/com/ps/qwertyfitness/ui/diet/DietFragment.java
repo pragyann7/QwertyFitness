@@ -23,6 +23,8 @@ public class DietFragment extends Fragment {
     private FragmentDietBinding binding;
     private DietViewModel viewModel;
     private LoggedFoodAdapter adapter;
+    private MealGroupAdapter mealGroupAdapter;
+    private String pendingMealType = "Logged";
 
     @Nullable
     @Override
@@ -47,11 +49,24 @@ public class DietFragment extends Fragment {
         binding.recyclerMeals.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerMeals.setAdapter(adapter);
 
+        mealGroupAdapter = new MealGroupAdapter(mealType -> {
+            pendingMealType = mealType;
+            showAddFoodPicker(mealType);
+        });
+        binding.recyclerMealGroups.setLayoutManager(new LinearLayoutManager(getContext()));
+        binding.recyclerMealGroups.setAdapter(mealGroupAdapter);
+
         viewModel.getLoggedFoodsToday().observe(getViewLifecycleOwner(), loggedFoods -> {
             adapter.setItems(loggedFoods);
+            mealGroupAdapter.setLoggedFoods(loggedFoods);
         });
 
-        // Use a more robust way to handle combined data
+        viewModel.getMealPlans().observe(getViewLifecycleOwner(), mealPlans -> {
+            mealGroupAdapter.setMealPlans(mealPlans);
+            // Hide "Meal Planner" text and recycler if no meals are planned
+            // For now let's always show recyclerMealGroups if we have custom labels
+        });
+
         viewModel.getUserProfile().observe(getViewLifecycleOwner(), profile -> {
             if (profile != null) {
                 updateNutritionUI(profile, 0f, 0f, 0f, 0f);
@@ -73,9 +88,14 @@ public class DietFragment extends Fragment {
         });
         
         binding.btnAddFood.setOnClickListener(v -> {
-            AddFoodBottomSheet bottomSheet = new AddFoodBottomSheet();
-            bottomSheet.show(getChildFragmentManager(), "AddFoodBottomSheet");
+            pendingMealType = "Logged";
+            showAddFoodPicker(null);
         });
+    }
+
+    private void showAddFoodPicker(String mealType) {
+        AddFoodBottomSheet bottomSheet = AddFoodBottomSheet.newInstance(mealType);
+        bottomSheet.show(getChildFragmentManager(), "AddFoodBottomSheet");
     }
 
     private void updateNutritionUI(UserProfile profile, float consumed, float protein, float carbs, float fat) {

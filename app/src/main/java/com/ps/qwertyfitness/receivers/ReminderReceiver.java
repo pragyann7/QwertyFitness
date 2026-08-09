@@ -41,7 +41,7 @@ public class ReminderReceiver extends BroadcastReceiver {
         NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (ACTION_MARK_DONE.equals(intent.getAction())) {
-            handleMarkDone(context, title, type);
+            handleMarkDone(context, title, type, reminderId);
             nm.cancel((int) reminderId);
             return;
         }
@@ -49,24 +49,59 @@ public class ReminderReceiver extends BroadcastReceiver {
         if (ACTION_SNOOZE.equals(intent.getAction())) {
             handleSnooze(context, reminderId, title, type, time, repeat, interval, endTime);
             nm.cancel((int) reminderId);
-            android.widget.Toast.makeText(context, "Snoozed for 1 minute", android.widget.Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Reschedule
-        rescheduleNext(context, reminderId, title, type, time, repeat, interval, endTime);
+        // IMPORTANT: Check if already done before showing notification (e.g. for snooze)
+        new Thread(() -> {
+            FitnessRepository repo = new FitnessRepository((android.app.Application) context.getApplicationContext());
+            String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+            boolean alreadyLogged = false;
+            
+            // Check if this meal/water/etc is already logged today
+            if ("WATER".equals(type)) {
+                // Water is interval-based, we don't skip unless we want to
+            } else {
+                java.util.List<com.ps.qwertyfitness.data.local.entity.LoggedFood> logs = repo.getLoggedFoodsForDateSync(today);
+                if (logs != null) {
+                    for (com.ps.qwertyfitness.data.local.entity.LoggedFood log : logs) {
+                        if (title.equalsIgnoreCase(log.mealType)) {
+                            alreadyLogged = true;
+                            break;
+                        }
+                    }
+                }
+            }
 
-        showNotification(context, (int) reminderId, title, "Time for your " + type.toLowerCase() + "!", type, time, repeat, interval, endTime);
+            if (alreadyLogged) {
+                // If it's already done, just reset snooze and don't show notification
+                repo.updateSnoozeTime(reminderId, 0);
+            } else {
+                // Not done yet, show the notification
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    // Reset snooze since the actual reminder is firing now
+                    new Thread(() -> repo.updateSnoozeTime(reminderId, 0)).start();
+
+                    // Reschedule for tomorrow/next day
+                    rescheduleNext(context, reminderId, title, type, time, repeat, interval, endTime);
+
+                    showNotification(context, (int) reminderId, title, "Time for your " + type.toLowerCase() + "!", type, time, repeat, interval, endTime);
+                });
+            }
+        }).start();
     }
 
     private void handleSnooze(Context context, long id, String title, String type, String time, String repeat, int interval, String endTime) {
-        int snoozeMinutes = 1; // 1 minute for testing
+        int snoozeMinutes = "WATER".equals(type) ? 5 : 15;
         long snoozeTime = System.currentTimeMillis() + (snoozeMinutes * 60 * 1000);
         
         FitnessRepository repository = new FitnessRepository((android.app.Application) context.getApplicationContext());
         new Thread(() -> {
             repository.updateSnoozeTime(id, snoozeTime);
         }).start();
+
+        android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+        handler.post(() -> android.widget.Toast.makeText(context, "Snoozed for " + snoozeMinutes + " minutes", android.widget.Toast.LENGTH_SHORT).show());
 
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, ReminderReceiver.class);
@@ -106,16 +141,21 @@ public class ReminderReceiver extends BroadcastReceiver {
         ReminderManager.scheduleReminder(context, r);
     }
 
-    private void handleMarkDone(Context context, String title, String type) {
+    private void handleMarkDone(Context context, String title, String type, long id) {
         FitnessRepository repository = new FitnessRepository((android.app.Application) context.getApplicationContext());
-        if ("MEAL".equals(type) || "WATER".equals(type) || "WORKOUT".equals(type) || "WEIGHT".equals(type)) {
-            LoggedFood food = new LoggedFood();
-            food.foodName = title;
-            food.mealType = title; 
-            food.date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-            food.calories = 0; 
-            repository.logFood(food);
-        }
+        new Thread(() -> {
+            // Reset snooze when marked as done
+            repository.updateSnoozeTime(id, 0);
+            
+            if ("MEAL".equals(type) || "WATER".equals(type) || "WORKOUT".equals(type) || "WEIGHT".equals(type)) {
+                LoggedFood food = new LoggedFood();
+                food.foodName = title;
+                food.mealType = title; 
+                food.date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                food.calories = 0; 
+                repository.logFood(food);
+            }
+        }).start();
     }
 
     private void showNotification(Context context, int id, String title, String message, String type, String time, String repeat, int interval, String endTime) {

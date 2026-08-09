@@ -65,6 +65,18 @@ public class DietViewModel extends AndroidViewModel {
         return repository.getTotalFatForDate(today);
     }
 
+    public LiveData<List<com.ps.qwertyfitness.data.local.entity.Reminder>> getMealPlans() {
+        return Transformations.map(repository.getAllReminders(), reminders -> {
+            List<com.ps.qwertyfitness.data.local.entity.Reminder> mealReminders = new ArrayList<>();
+            if (reminders != null) {
+                for (com.ps.qwertyfitness.data.local.entity.Reminder r : reminders) {
+                    if ("MEAL".equals(r.type)) mealReminders.add(r);
+                }
+            }
+            return mealReminders;
+        });
+    }
+
     public void logFood(LoggedFood loggedFood) {
         repository.logFood(loggedFood);
     }

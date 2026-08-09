@@ -214,12 +214,28 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <!-- Meals -->
+        <!-- Today's Meals -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Today's Meals"
+            android:text="Meal Planner"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_meal_groups"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:nestedScrollingEnabled="false" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="All Logged Items"
             android:textColor="@color/text_primary"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -228,7 +244,8 @@
             android:id="@+id/recycler_meals"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:nestedScrollingEnabled="false" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_add_food"

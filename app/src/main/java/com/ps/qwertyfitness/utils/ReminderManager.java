@@ -62,6 +62,22 @@ public class ReminderManager {
         }
     }
 
+    public static void cancelSnooze(Context context, long id) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, ReminderReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context,
+                (int) id + 30000,
+                intent,
+                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent);
+            pendingIntent.cancel();
+        }
+    }
+
     public static long calculateNextTriggerTime(Reminder reminder) {
         if (reminder == null || reminder.time == null) return System.currentTimeMillis();
         

@@ -29,7 +29,10 @@ public interface FoodDao {
     
     @Query("SELECT * FROM logged_foods WHERE date = :date")
     LiveData<List<LoggedFood>> getLoggedFoodsForDate(String date);
-    
+
+    @Query("SELECT * FROM logged_foods WHERE date = :date")
+    List<LoggedFood> getLoggedFoodsForDateSync(String date);
+
     @Query("SELECT SUM(calories) FROM logged_foods WHERE date = :date")
     LiveData<Float> getTotalCaloriesForDate(String date);
 

@@ -83,8 +83,13 @@ public class ScheduleActivity extends AppCompatActivity {
         EditText editTime = view.findViewById(R.id.edit_reminder_time);
         EditText editEndTime = view.findViewById(R.id.edit_reminder_end_time);
         EditText editInterval = view.findViewById(R.id.edit_reminder_interval);
+        EditText editTargetCals = view.findViewById(R.id.edit_target_calories);
+        EditText editTargetProt = view.findViewById(R.id.edit_target_protein);
+        EditText editTargetCarb = view.findViewById(R.id.edit_target_carbs);
+        EditText editTargetFat = view.findViewById(R.id.edit_target_fat);
         View layoutEndTime = view.findViewById(R.id.layout_end_time);
         View layoutInterval = view.findViewById(R.id.layout_interval);
+        View layoutMealTargets = view.findViewById(R.id.layout_meal_targets);
         ChipGroup chipGroupDays = view.findViewById(R.id.chip_group_days);
 
         String[] types = {"Workout", "Meal", "Water", "Weight"};
@@ -98,8 +103,10 @@ public class ScheduleActivity extends AppCompatActivity {
             selectedType[0] = internalTypes[position];
             
             boolean isWater = "WATER".equals(selectedType[0]);
+            boolean isMeal = "MEAL".equals(selectedType[0]);
             layoutInterval.setVisibility(isWater ? View.VISIBLE : View.GONE);
             layoutEndTime.setVisibility(isWater ? View.VISIBLE : View.GONE);
+            layoutMealTargets.setVisibility(isMeal ? View.VISIBLE : View.GONE);
         });
 
         editTime.setOnClickListener(v -> pickTime(editTime));
@@ -124,6 +131,13 @@ public class ScheduleActivity extends AppCompatActivity {
                         if ("WATER".equals(reminder.type)) {
                             if (!intervalStr.isEmpty()) reminder.intervalMinutes = Integer.parseInt(intervalStr);
                             if (!endTime.isEmpty()) reminder.endTime = endTime;
+                        }
+
+                        if ("MEAL".equals(reminder.type)) {
+                            if (!editTargetCals.getText().toString().isEmpty()) reminder.targetValue = Integer.parseInt(editTargetCals.getText().toString());
+                            if (!editTargetProt.getText().toString().isEmpty()) reminder.targetProtein = Integer.parseInt(editTargetProt.getText().toString());
+                            if (!editTargetCarb.getText().toString().isEmpty()) reminder.targetCarbs = Integer.parseInt(editTargetCarb.getText().toString());
+                            if (!editTargetFat.getText().toString().isEmpty()) reminder.targetFat = Integer.parseInt(editTargetFat.getText().toString());
                         }
 
                         StringBuilder days = new java.lang.StringBuilder();

@@ -31,7 +31,7 @@ import com.ps.qwertyfitness.data.local.entity.WorkoutSet;
 
 import java.util.concurrent.Executors;
 
-@Database(entities = {UserProfile.class, WorkoutPlan.class, Exercise.class, FoodItem.class, LoggedFood.class, WorkoutSession.class, WorkoutSet.class, WeightEntry.class, PlanExercise.class, BodyMeasurement.class, ProgressPhoto.class, Reminder.class}, version = 18, exportSchema = false)
+@Database(entities = {UserProfile.class, WorkoutPlan.class, Exercise.class, FoodItem.class, LoggedFood.class, WorkoutSession.class, WorkoutSet.class, WeightEntry.class, PlanExercise.class, BodyMeasurement.class, ProgressPhoto.class, Reminder.class}, version = 19, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     
     public abstract UserDao userDao();

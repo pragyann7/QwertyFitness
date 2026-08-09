@@ -87,6 +87,10 @@ public class FitnessRepository {
         return foodDao.getLoggedFoodsForDate(date);
     }
 
+    public List<LoggedFood> getLoggedFoodsForDateSync(String date) {
+        return foodDao.getLoggedFoodsForDateSync(date);
+    }
+
     public LiveData<Float> getTotalCaloriesForDate(String date) {
         return foodDao.getTotalCaloriesForDate(date);
     }

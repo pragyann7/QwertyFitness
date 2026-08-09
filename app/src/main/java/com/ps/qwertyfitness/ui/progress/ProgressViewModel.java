@@ -9,9 +9,11 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 
 import com.ps.qwertyfitness.data.local.entity.BodyMeasurement;
+import com.ps.qwertyfitness.data.local.entity.ExerciseProgressPoint;
 import com.ps.qwertyfitness.data.local.entity.ExercisePR;
 import com.ps.qwertyfitness.data.local.entity.ProgressPhoto;
 import com.ps.qwertyfitness.data.local.entity.WeightEntry;
+import com.ps.qwertyfitness.data.local.entity.WorkoutSetWithDate;
 import com.ps.qwertyfitness.data.repository.FitnessRepository;
 
 import java.util.List;
@@ -89,6 +91,18 @@ public class ProgressViewModel extends AndroidViewModel {
         measurement.date = date;
         measurement.timestamp = System.currentTimeMillis();
         repository.insertMeasurement(measurement);
+    }
+
+    public LiveData<List<BodyMeasurement>> getMeasurementHistory(String partName) {
+        return repository.getMeasurementHistory(partName);
+    }
+
+    public LiveData<List<WorkoutSetWithDate>> getExerciseHistory(String exerciseName) {
+        return repository.getExerciseHistory(exerciseName);
+    }
+
+    public LiveData<List<ExerciseProgressPoint>> getExerciseProgressPoints(String exerciseName) {
+        return repository.getExerciseProgressPoints(exerciseName);
     }
 
     public LiveData<List<ProgressPhoto>> getPhotosByCategory(String category) {

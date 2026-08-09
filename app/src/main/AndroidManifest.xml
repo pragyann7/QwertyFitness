@@ -32,6 +32,11 @@
             android:theme="@style/Theme.QwertyFitness" />
 
         <activity
+            android:name=".ui.progress.ExerciseProgressActivity"
+            android:exported="false"
+            android:theme="@style/Theme.QwertyFitness" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true" />
         <activity
@@ -48,6 +53,10 @@
             android:theme="@style/Theme.QwertyFitness" />
         <activity
             android:name=".ui.workout.active.WorkoutSummaryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.QwertyFitness" />
+        <activity
+            android:name=".ui.workout.tabs.SessionDetailActivity"
             android:exported="false"
             android:theme="@style/Theme.QwertyFitness" />
         <activity

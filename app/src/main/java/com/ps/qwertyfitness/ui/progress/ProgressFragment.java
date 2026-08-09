@@ -15,6 +15,8 @@ import com.ps.qwertyfitness.R;
 import com.ps.qwertyfitness.data.local.entity.UserProfile;
 import com.ps.qwertyfitness.databinding.FragmentProgressBinding;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class ProgressFragment extends Fragment {
@@ -56,12 +58,17 @@ public class ProgressFragment extends Fragment {
         binding.recyclerWeightHistory.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerWeightHistory.setAdapter(historyAdapter);
 
-        prAdapter = new ExercisePRAdapter();
+        prAdapter = new ExercisePRAdapter(pr -> {
+            android.content.Intent intent = new android.content.Intent(getActivity(), ExerciseProgressActivity.class);
+            intent.putExtra("EXERCISE_NAME", pr.exerciseName);
+            startActivity(intent);
+        });
         binding.recyclerPrs.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerPrs.setAdapter(prAdapter);
 
         setupTimelineFilter();
         setupPhotoObservers();
+        setupMeasurementClicks();
         
         viewModel.getLatestWeight().observe(getViewLifecycleOwner(), weightEntry -> {
             if (weightEntry != null) {
@@ -118,7 +125,13 @@ public class ProgressFragment extends Fragment {
         });
 
         viewModel.getFilteredGraphData().observe(getViewLifecycleOwner(), entries -> {
-            binding.weightGraph.setData(entries != null ? entries : new java.util.ArrayList<>());
+            if (entries != null) {
+                List<TrendGraphView.DataPoint> points = new ArrayList<>();
+                for (com.ps.qwertyfitness.data.local.entity.WeightEntry e : entries) {
+                    points.add(new TrendGraphView.DataPoint(e.timestamp, e.weight));
+                }
+                binding.weightGraph.setData(points, "kg");
+            }
         });
 
         viewModel.getPersonalRecords().observe(getViewLifecycleOwner(), prs -> {
@@ -174,6 +187,34 @@ public class ProgressFragment extends Fragment {
             android.content.Intent intent = new android.content.Intent(getActivity(), PhotoGalleryActivity.class);
             startActivity(intent);
         });
+    }
+
+    private void setupMeasurementClicks() {
+        View.OnClickListener listener = v -> {
+            String part = "";
+            if (v.getId() == R.id.text_chest_value || v.getId() == R.id.layout_chest) part = "Chest";
+            else if (v.getId() == R.id.text_waist_value || v.getId() == R.id.layout_waist) part = "Waist";
+            else if (v.getId() == R.id.text_hips_value || v.getId() == R.id.layout_hips) part = "Hips";
+            else if (v.getId() == R.id.text_left_arm_value || v.getId() == R.id.layout_left_arm) part = "Left Arm";
+            else if (v.getId() == R.id.text_right_arm_value || v.getId() == R.id.layout_right_arm) part = "Right Arm";
+            
+            if (!part.isEmpty()) {
+                MeasurementTrendBottomSheet sheet = new MeasurementTrendBottomSheet(part);
+                sheet.show(getChildFragmentManager(), "MeasurementTrend");
+            }
+        };
+
+        binding.textChestValue.setOnClickListener(listener);
+        binding.textWaistValue.setOnClickListener(listener);
+        binding.textHipsValue.setOnClickListener(listener);
+        binding.textLeftArmValue.setOnClickListener(listener);
+        binding.textRightArmValue.setOnClickListener(listener);
+
+        binding.layoutChest.setOnClickListener(listener);
+        binding.layoutWaist.setOnClickListener(listener);
+        binding.layoutHips.setOnClickListener(listener);
+        binding.layoutLeftArm.setOnClickListener(listener);
+        binding.layoutRightArm.setOnClickListener(listener);
     }
 
     private void selectPhoto(String category) {

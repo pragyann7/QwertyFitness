@@ -1,20 +1,26 @@
 package com.ps.qwertyfitness.ui.workout.tabs;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ps.qwertyfitness.data.local.entity.Exercise;
+import com.ps.qwertyfitness.data.local.entity.ExercisePR;
 import com.ps.qwertyfitness.databinding.ItemExerciseBinding;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHolder> {
     
     private List<Exercise> items = new ArrayList<>();
+    private final Map<String, Float> prMap = new HashMap<>();
     private OnExerciseClickListener listener;
 
     public interface OnExerciseClickListener {
@@ -28,10 +34,16 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
     }
 
     public void setItems(List<Exercise> items) {
-        if (items == null) {
-            this.items = new ArrayList<>();
-        } else {
-            this.items = items;
+        this.items = items != null ? items : new ArrayList<>();
+        notifyDataSetChanged();
+    }
+
+    public void setPersonalRecords(List<ExercisePR> prs) {
+        prMap.clear();
+        if (prs != null) {
+            for (ExercisePR pr : prs) {
+                prMap.put(pr.exerciseName, pr.maxWeight);
+            }
         }
         notifyDataSetChanged();
     }
@@ -48,6 +60,15 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         Exercise item = items.get(position);
         holder.binding.textExerciseName.setText(item.name);
         holder.binding.textExerciseDetails.setText(item.targetMuscleGroup + " • " + item.equipment);
+        
+        Float pr = prMap.get(item.name);
+        if (pr != null && pr > 0) {
+            holder.binding.layoutPrBadge.setVisibility(View.VISIBLE);
+            holder.binding.textExercisePr.setText(String.format(Locale.getDefault(), "%.1fkg", pr));
+        } else {
+            holder.binding.layoutPrBadge.setVisibility(View.INVISIBLE);
+        }
+
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onExerciseClick(item);

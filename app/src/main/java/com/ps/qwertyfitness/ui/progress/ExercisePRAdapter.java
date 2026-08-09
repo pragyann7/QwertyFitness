@@ -16,8 +16,15 @@ import java.util.Locale;
 
 public class ExercisePRAdapter extends ListAdapter<ExercisePR, ExercisePRAdapter.ViewHolder> {
     
-    public ExercisePRAdapter() {
+    private final OnPrClickListener listener;
+
+    public interface OnPrClickListener {
+        void onPrClick(ExercisePR pr);
+    }
+
+    public ExercisePRAdapter(OnPrClickListener listener) {
         super(DIFF_CALLBACK);
+        this.listener = listener;
     }
 
     private static final DiffUtil.ItemCallback<ExercisePR> DIFF_CALLBACK = new DiffUtil.ItemCallback<ExercisePR>() {
@@ -48,6 +55,7 @@ public class ExercisePRAdapter extends ListAdapter<ExercisePR, ExercisePRAdapter
         ExercisePR item = getItem(position);
         holder.binding.textExerciseName.setText(item.exerciseName);
         holder.binding.textPrWeight.setText(String.format(Locale.getDefault(), "%.1f kg", item.maxWeight));
+        holder.itemView.setOnClickListener(v -> listener.onPrClick(item));
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

@@ -9,11 +9,13 @@ import androidx.room.Update;
 import androidx.room.Transaction;
 
 import com.ps.qwertyfitness.data.local.entity.ExercisePR;
+import com.ps.qwertyfitness.data.local.entity.ExerciseProgressPoint;
 import com.ps.qwertyfitness.data.local.entity.PlanExercise;
 import com.ps.qwertyfitness.data.local.entity.PlanExerciseWithDetails;
 import com.ps.qwertyfitness.data.local.entity.WorkoutPlan;
 import com.ps.qwertyfitness.data.local.entity.WorkoutSession;
 import com.ps.qwertyfitness.data.local.entity.WorkoutSet;
+import com.ps.qwertyfitness.data.local.entity.WorkoutSetWithDate;
 
 import java.util.List;
 
@@ -58,6 +60,17 @@ public interface WorkoutDao {
 
     @Query("SELECT MAX(weight) FROM workout_sets WHERE exerciseName = :exerciseName AND isCompleted = 1")
     float getMaxWeightForExerciseSync(String exerciseName);
+
+    @Query("SELECT ws.exerciseName, MAX(ws.weight) as weight, s.startTime as timestamp " +
+           "FROM workout_sets ws JOIN workout_sessions s ON ws.sessionId = s.id " +
+           "WHERE ws.exerciseName = :exerciseName AND ws.isCompleted = 1 " +
+           "GROUP BY s.date ORDER BY s.startTime ASC")
+    LiveData<List<ExerciseProgressPoint>> getExerciseProgressPoints(String exerciseName);
+
+    @Query("SELECT ws.*, s.date as date FROM workout_sets ws " +
+           "JOIN workout_sessions s ON ws.sessionId = s.id " +
+           "WHERE ws.exerciseName = :exerciseName AND ws.isCompleted = 1 ORDER BY ws.id DESC")
+    LiveData<List<WorkoutSetWithDate>> getExerciseHistoryWithDate(String exerciseName);
 
     @Query("SELECT exerciseName, MAX(weight) as maxWeight FROM workout_sets WHERE isCompleted = 1 GROUP BY exerciseName")
     LiveData<List<ExercisePR>> getPersonalRecords();

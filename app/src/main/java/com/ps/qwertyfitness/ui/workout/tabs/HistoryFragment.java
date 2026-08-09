@@ -1,5 +1,6 @@
 package com.ps.qwertyfitness.ui.workout.tabs;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,7 +33,17 @@ public class HistoryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireParentFragment()).get(WorkoutViewModel.class);
         
-        adapter = new SessionAdapter();
+        adapter = new SessionAdapter(session -> {
+            Intent intent = new Intent(getActivity(), SessionDetailActivity.class);
+            intent.putExtra("SESSION_ID", session.id);
+            intent.putExtra("PLAN_NAME", session.planName);
+            intent.putExtra("DATE", session.date);
+            intent.putExtra("VOLUME", session.totalVolume);
+            intent.putExtra("SETS", session.totalSets);
+            intent.putExtra("DURATION", (session.endTime - session.startTime));
+            intent.putExtra("NOTES", session.note);
+            startActivity(intent);
+        });
         binding.recyclerHistory.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerHistory.setAdapter(adapter);
         

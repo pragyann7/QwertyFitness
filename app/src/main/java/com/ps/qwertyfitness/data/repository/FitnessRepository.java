@@ -15,6 +15,7 @@ import com.ps.qwertyfitness.data.local.dao.WeightDao;
 import com.ps.qwertyfitness.data.local.dao.WorkoutDao;
 import com.ps.qwertyfitness.data.local.entity.BodyMeasurement;
 import com.ps.qwertyfitness.data.local.entity.Exercise;
+import com.ps.qwertyfitness.data.local.entity.ExerciseProgressPoint;
 import com.ps.qwertyfitness.data.local.entity.FoodItem;
 import com.ps.qwertyfitness.data.local.entity.LoggedFood;
 import com.ps.qwertyfitness.data.local.entity.PlanExercise;
@@ -26,6 +27,7 @@ import com.ps.qwertyfitness.data.local.entity.WeightEntry;
 import com.ps.qwertyfitness.data.local.entity.WorkoutPlan;
 import com.ps.qwertyfitness.data.local.entity.WorkoutSession;
 import com.ps.qwertyfitness.data.local.entity.WorkoutSet;
+import com.ps.qwertyfitness.data.local.entity.WorkoutSetWithDate;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -130,6 +132,14 @@ public class FitnessRepository {
         return workoutDao.getPersonalRecords();
     }
 
+    public LiveData<List<WorkoutSetWithDate>> getExerciseHistory(String exerciseName) {
+        return workoutDao.getExerciseHistoryWithDate(exerciseName);
+    }
+
+    public LiveData<List<ExerciseProgressPoint>> getExerciseProgressPoints(String exerciseName) {
+        return workoutDao.getExerciseProgressPoints(exerciseName);
+    }
+
     public void insertPlan(WorkoutPlan plan, List<PlanExercise> exercises) {
         databaseWriteExecutor.execute(() -> {
             long planId = workoutDao.insertPlan(plan);
@@ -142,6 +152,10 @@ public class FitnessRepository {
 
     public LiveData<List<Exercise>> searchExercises(String query) {
         return exerciseDao.searchExercises("%" + query + "%");
+    }
+
+    public LiveData<List<Exercise>> searchExercisesFiltered(String query, String muscleGroup, String equipment) {
+        return exerciseDao.searchExercisesFiltered("%" + query + "%", muscleGroup, equipment);
     }
 
     public void insertSession(WorkoutSession session, List<WorkoutSet> sets, Runnable onComplete) {
@@ -185,6 +199,10 @@ public class FitnessRepository {
 
     public LiveData<BodyMeasurement> getLatestMeasurementByPart(String partName) {
         return bodyMeasurementDao.getLatestMeasurementByPart(partName);
+    }
+
+    public LiveData<List<BodyMeasurement>> getMeasurementHistory(String partName) {
+        return bodyMeasurementDao.getMeasurementsByPart(partName);
     }
 
     public void insertMeasurement(BodyMeasurement measurement) {

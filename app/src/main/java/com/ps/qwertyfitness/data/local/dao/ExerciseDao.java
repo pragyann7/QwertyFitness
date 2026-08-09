@@ -23,6 +23,9 @@ public interface ExerciseDao {
     @Query("SELECT * FROM exercises WHERE name LIKE :query")
     LiveData<List<Exercise>> searchExercises(String query);
 
+    @Query("SELECT * FROM exercises WHERE name LIKE :query AND (:muscleGroup IS NULL OR targetMuscleGroup = :muscleGroup) AND (:equipment IS NULL OR equipment = :equipment)")
+    LiveData<List<Exercise>> searchExercisesFiltered(String query, String muscleGroup, String equipment);
+
     @Insert(onConflict = androidx.room.OnConflictStrategy.IGNORE)
     long insertSync(Exercise exercise);
     

@@ -16,9 +16,18 @@ import java.util.Locale;
 public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHolder> {
     
     private List<WorkoutSession> items = new ArrayList<>();
+    private final OnSessionClickListener listener;
+
+    public interface OnSessionClickListener {
+        void onSessionClick(WorkoutSession session);
+    }
+
+    public SessionAdapter(OnSessionClickListener listener) {
+        this.listener = listener;
+    }
 
     public void setItems(List<WorkoutSession> items) {
-        this.items = items;
+        this.items = items != null ? items : new ArrayList<>();
         notifyDataSetChanged();
     }
 
@@ -36,6 +45,8 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHold
         holder.binding.textSessionDate.setText(item.date);
         holder.binding.textSessionVolume.setText(String.format(Locale.getDefault(), "%,d kg", item.totalVolume));
         holder.binding.textSessionSets.setText(String.format(Locale.getDefault(), "%d sets", item.totalSets));
+        
+        holder.itemView.setOnClickListener(v -> listener.onSessionClick(item));
     }
 
     @Override

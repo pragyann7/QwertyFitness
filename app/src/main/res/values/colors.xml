@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Qwerty Fitness Palette - Dark -->
+    <color name="background_deep_charcoal">#0D1117</color>
+    <color name="surface_slate">#161C24</color>
+    <color name="surface_elevated_soft_slate">#202833</color>
+
+    <color name="accent_electric_lime">#B7F34A</color>
+    <color name="accent_aqua">#55D6BE</color>
+    <color name="highlight_soft_blue">#7AA7FF</color>
+
+    <color name="warning_warm_amber">#FFB547</color>
+    <color name="error_coral_red">#FF6B6B</color>
+
+    <color name="text_primary">#F5F7FA</color>
+    <color name="text_secondary">#A8B1BD</color>
+    <color name="text_muted">#6F7A87</color>
+
+    <color name="divider_slate">#29313C</color>
+
+    <!-- Qwerty Fitness Palette - Light -->
+    <color name="background_light">#F6F8FA</color>
+    <color name="surface_light">#FFFFFF</color>
+    <color name="text_primary_light">#101418</color>
+    <color name="accent_electric_lime_light">#6FAF18</color>
+</resources>

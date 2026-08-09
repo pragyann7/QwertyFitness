@@ -1,0 +1,10 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.QwertyFitness" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/accent_electric_lime</item>
+        <item name="android:windowBackground">@color/background_deep_charcoal</item>
+        <item name="android:statusBarColor">@color/background_deep_charcoal</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/background_deep_charcoal</item>
+    </style>
+</resources>

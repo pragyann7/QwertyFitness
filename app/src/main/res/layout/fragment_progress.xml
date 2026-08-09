@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_deep_charcoal">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Progress"
+            android:textColor="@color/text_primary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <!-- Timeline Filter -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:scrollbars="none">
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/toggle_group_timeline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                app:selectionRequired="true"
+                app:checkedButton="@id/btn_filter_all">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_filter_7d"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="7D"
+                    android:textColor="@color/text_secondary"
+                    app:strokeColor="@color/divider_slate" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_filter_30d"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="30D"
+                    android:textColor="@color/text_secondary"
+                    app:strokeColor="@color/divider_slate" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_filter_3m"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3M"
+                    android:textColor="@color/text_secondary"
+                    app:strokeColor="@color/divider_slate" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_filter_6m"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="6M"
+                    android:textColor="@color/text_secondary"
+                    app:strokeColor="@color/divider_slate" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_filter_1y"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1Y"
+                    android:textColor="@color/text_secondary"
+                    app:strokeColor="@color/divider_slate" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_filter_all"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ALL"
+                    android:textColor="@color/text_secondary"
+                    app:strokeColor="@color/divider_slate" />
+
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+        </HorizontalScrollView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            app:cardBackgroundColor="@color/surface_slate"
+            app:cardCornerRadius="16dp"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CURRENT WEIGHT"
+                    android:textColor="@color/text_muted"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/text_current_weight"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="74.2 kg"
+                    android:textColor="@color/text_primary"
+                    android:textSize="32sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/text_weight_change"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="No data this month"
+                    android:textColor="@color/text_muted"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+
+                <!-- Weight Journey Graph -->
+                <com.ps.qwertyfitness.ui.progress.WeightGraphView
+                    android:id="@+id/weight_graph"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginTop="24dp"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_log_weight"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="+ LOG WEIGHT"
+                    android:textColor="@color/background_deep_charcoal"
+                    app:backgroundTint="@color/accent_electric_lime"
+                    app:cornerRadius="8dp" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Body Measurements -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/surface_slate"
+            app:cardCornerRadius="16dp"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="BODY MEASUREMENTS"
+                    android:textColor="@color/text_muted"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="8dp">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Chest"
+                            android:textColor="@color/text_secondary" />
+                        <TextView
+                            android:id="@+id/text_chest_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textColor="@color/text_primary"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_slate" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="8dp">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Waist"
+                            android:textColor="@color/text_secondary" />
+                        <TextView
+                            android:id="@+id/text_waist_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textColor="@color/text_primary"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_slate" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="8dp">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Hips"
+                            android:textColor="@color/text_secondary" />
+                        <TextView
+                            android:id="@+id/text_hips_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textColor="@color/text_primary"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_slate" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="8dp">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Left Arm"
+                            android:textColor="@color/text_secondary" />
+                        <TextView
+                            android:id="@+id/text_left_arm_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textColor="@color/text_primary"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_slate" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="8dp">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Right Arm"
+                            android:textColor="@color/text_secondary" />
+                        <TextView
+                            android:id="@+id/text_right_arm_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textColor="@color/text_primary"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_log_measurement"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="+ LOG MEASUREMENT"
+                    android:textColor="@color/accent_electric_lime" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Strength Progress (PRs) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="PERSONAL RECORDS"
+            android:textColor="@color/text_muted"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_prs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:nestedScrollingEnabled="false" />
+
+        <!-- Weight History List -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="WEIGHT HISTORY"
+            android:textColor="@color/text_muted"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_weight_history"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:nestedScrollingEnabled="false" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_view_all_weight"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="VIEW ALL HISTORY"
+            android:textColor="@color/accent_electric_lime"
+            android:visibility="gone" />
+
+        <!-- Progress Photos -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="PROGRESS PHOTOS"
+            android:textColor="@color/text_muted"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:cardBackgroundColor="@color/surface_slate"
+            app:cardCornerRadius="16dp"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/btn_photo_front"
+                        android:layout_width="0dp"
+                        android:layout_height="100dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_elevated_soft_slate"
+                        android:gravity="center"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Front"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="+"
+                            android:textColor="@color/accent_electric_lime"
+                            android:textSize="24sp" />
+                    </LinearLayout>
+
+                    <View android:layout_width="8dp" android:layout_height="0dp" />
+
+                    <LinearLayout
+                        android:id="@+id/btn_photo_side"
+                        android:layout_width="0dp"
+                        android:layout_height="100dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_elevated_soft_slate"
+                        android:gravity="center"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Side"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="+"
+                            android:textColor="@color/accent_electric_lime"
+                            android:textSize="24sp" />
+                    </LinearLayout>
+
+                    <View android:layout_width="8dp" android:layout_height="0dp" />
+
+                    <LinearLayout
+                        android:id="@+id/btn_photo_back"
+                        android:layout_width="0dp"
+                        android:layout_height="100dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_elevated_soft_slate"
+                        android:gravity="center"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Back"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="+"
+                            android:textColor="@color/accent_electric_lime"
+                            android:textSize="24sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_compare_photos"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="COMPARE BEFORE &amp; AFTER"
+                    android:textColor="@color/accent_electric_lime" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

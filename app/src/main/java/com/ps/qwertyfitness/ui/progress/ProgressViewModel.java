@@ -1,0 +1,106 @@
+package com.ps.qwertyfitness.ui.progress;
+
+import android.app.Application;
+
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
+
+import com.ps.qwertyfitness.data.local.entity.BodyMeasurement;
+import com.ps.qwertyfitness.data.local.entity.ExercisePR;
+import com.ps.qwertyfitness.data.local.entity.ProgressPhoto;
+import com.ps.qwertyfitness.data.local.entity.WeightEntry;
+import com.ps.qwertyfitness.data.repository.FitnessRepository;
+
+import java.util.List;
+
+public class ProgressViewModel extends AndroidViewModel {
+    private final FitnessRepository repository;
+    private final MutableLiveData<String> graphFilter = new MutableLiveData<>("ALL");
+    private final LiveData<List<WeightEntry>> filteredGraphData;
+
+    public ProgressViewModel(@NonNull Application application) {
+        super(application);
+        repository = new FitnessRepository(application);
+        
+        filteredGraphData = Transformations.switchMap(graphFilter, filter -> {
+            long sinceTimestamp;
+            long now = System.currentTimeMillis();
+            if ("7D".equals(filter)) {
+                sinceTimestamp = now - (7L * 24 * 60 * 60 * 1000);
+            } else if ("30D".equals(filter)) {
+                sinceTimestamp = now - (30L * 24 * 60 * 60 * 1000);
+            } else if ("3M".equals(filter)) {
+                sinceTimestamp = now - (90L * 24 * 60 * 60 * 1000);
+            } else if ("6M".equals(filter)) {
+                sinceTimestamp = now - (180L * 24 * 60 * 60 * 1000);
+            } else if ("1Y".equals(filter)) {
+                sinceTimestamp = now - (365L * 24 * 60 * 60 * 1000);
+            } else {
+                sinceTimestamp = 0;
+            }
+            return repository.getWeightEntriesSince(sinceTimestamp);
+        });
+    }
+
+    public LiveData<List<WeightEntry>> getAllWeightEntries() {
+        return repository.getAllWeightEntries();
+    }
+
+    public LiveData<WeightEntry> getLatestWeight() {
+        return repository.getLatestWeight();
+    }
+
+    public void setGraphFilter(String filter) {
+        graphFilter.setValue(filter);
+    }
+
+    public LiveData<List<WeightEntry>> getFilteredGraphData() {
+        return filteredGraphData;
+    }
+
+    public LiveData<List<ExercisePR>> getPersonalRecords() {
+        return repository.getPersonalRecords();
+    }
+
+    public void logWeight(float weight, String date) {
+        logWeightWithTimestamp(weight, date, System.currentTimeMillis());
+    }
+
+    public void logWeightWithTimestamp(float weight, String date, long timestamp) {
+        WeightEntry entry = new WeightEntry();
+        entry.weight = weight;
+        entry.date = date;
+        entry.timestamp = timestamp;
+        repository.insertWeight(entry);
+    }
+
+    public LiveData<BodyMeasurement> getLatestMeasurement(String partName) {
+        return repository.getLatestMeasurementByPart(partName);
+    }
+
+    public void logMeasurement(String partName, float value, String unit, String date) {
+        BodyMeasurement measurement = new BodyMeasurement();
+        measurement.partName = partName;
+        measurement.value = value;
+        measurement.unit = unit;
+        measurement.date = date;
+        measurement.timestamp = System.currentTimeMillis();
+        repository.insertMeasurement(measurement);
+    }
+
+    public LiveData<List<ProgressPhoto>> getPhotosByCategory(String category) {
+        return repository.getPhotosByCategory(category);
+    }
+
+    public void addProgressPhoto(String path, String category, String date) {
+        ProgressPhoto photo = new ProgressPhoto();
+        photo.imagePath = path;
+        photo.category = category;
+        photo.date = date;
+        photo.timestamp = System.currentTimeMillis();
+        repository.insertPhoto(photo);
+    }
+}

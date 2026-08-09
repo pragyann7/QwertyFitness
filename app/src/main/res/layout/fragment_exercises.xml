@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_deep_charcoal"
+    android:orientation="vertical">
+
+    <EditText
+        android:id="@+id/edit_search_exercise"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:background="@color/surface_slate"
+        android:hint="Search exercises..."
+        android:padding="12dp"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_muted" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_exercises"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="16dp" />
+
+</LinearLayout>

@@ -32,6 +32,9 @@ public interface WorkoutDao {
     
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insertPlanExercise(PlanExercise planExercise);
+
+    @Update
+    void updatePlan(WorkoutPlan plan);
     
     @Transaction
     @Query("SELECT * FROM plan_exercises WHERE planId = :planId ORDER BY sequenceOrder ASC")
@@ -74,4 +77,10 @@ public interface WorkoutDao {
 
     @Query("SELECT exerciseName, MAX(weight) as maxWeight FROM workout_sets WHERE isCompleted = 1 GROUP BY exerciseName")
     LiveData<List<ExercisePR>> getPersonalRecords();
+
+    @Query("DELETE FROM workout_plans WHERE id = :planId")
+    void deletePlanById(long planId);
+
+    @Query("DELETE FROM plan_exercises WHERE planId = :planId")
+    void deletePlanExercisesByPlanId(long planId);
 }

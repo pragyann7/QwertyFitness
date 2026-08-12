@@ -31,7 +31,7 @@ import com.ps.qwertyfitness.data.local.entity.WorkoutSet;
 
 import java.util.concurrent.Executors;
 
-@Database(entities = {UserProfile.class, WorkoutPlan.class, Exercise.class, FoodItem.class, LoggedFood.class, WorkoutSession.class, WorkoutSet.class, WeightEntry.class, PlanExercise.class, BodyMeasurement.class, ProgressPhoto.class, Reminder.class}, version = 19, exportSchema = false)
+@Database(entities = {UserProfile.class, WorkoutPlan.class, Exercise.class, FoodItem.class, LoggedFood.class, WorkoutSession.class, WorkoutSet.class, WeightEntry.class, PlanExercise.class, BodyMeasurement.class, ProgressPhoto.class, Reminder.class}, version = 25, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     
     public abstract UserDao userDao();
@@ -82,24 +82,93 @@ public abstract class AppDatabase extends RoomDatabase {
             WorkoutDao workoutDao = INSTANCE.workoutDao();
             FoodDao foodDao = INSTANCE.foodDao();
 
-            // Seed Exercises
-            long e1Id = insertExerciseIfMissing(dao, "Bench Press", "Chest", "Barbell");
-            long e2Id = insertExerciseIfMissing(dao, "Squat", "Legs", "Barbell");
-            long e3Id = insertExerciseIfMissing(dao, "Deadlift", "Back/Legs", "Barbell");
+            // 1. Seed Exercises
+            // Push
+            long pushupId = insertExerciseIfMissing(dao, "Standard / Decline Push-ups", "Chest", "Bodyweight");
+            long floorPressId = insertExerciseIfMissing(dao, "Dumbbell Floor Press", "Chest", "Dumbbell");
+            long pikePushupId = insertExerciseIfMissing(dao, "Pike Push-ups", "Shoulders", "Bodyweight");
+            long latRaiseId = insertExerciseIfMissing(dao, "Dumbbell Lateral Raises", "Shoulders", "Dumbbell");
+            long chairDipId = insertExerciseIfMissing(dao, "Chair Dips", "Triceps", "Chair");
+            long shoulderTapId = insertExerciseIfMissing(dao, "Plank to Shoulder Taps", "Core", "Bodyweight");
 
-            // Seed Plans
+            // Pull
+            long dbRowId = insertExerciseIfMissing(dao, "Bent-Over Dumbbell Rows", "Back", "Dumbbell");
+            long singleDbRowId = insertExerciseIfMissing(dao, "Single-Arm Dumbbell Rows", "Back", "Dumbbell");
+            long proneYId = insertExerciseIfMissing(dao, "Prone Y-Raises", "Back", "Bodyweight");
+            long bicepCurlId = insertExerciseIfMissing(dao, "Dumbbell Bicep Curls", "Biceps", "Dumbbell");
+            long hammerCurlId = insertExerciseIfMissing(dao, "Hammer Curls", "Biceps", "Dumbbell");
+
+            // Legs
+            long bulgarianId = insertExerciseIfMissing(dao, "Bulgarian Split Squats", "Legs", "Dumbbell");
+            long gobletSquatId = insertExerciseIfMissing(dao, "Dumbbell Goblet Squats", "Legs", "Dumbbell");
+            long rdlId = insertExerciseIfMissing(dao, "Dumbbell Romanian Deadlifts", "Legs", "Dumbbell");
+            long lungeId = insertExerciseIfMissing(dao, "Walking Lunges", "Legs", "Dumbbell");
+            long calfRaiseId = insertExerciseIfMissing(dao, "Single-Leg Calf Raises", "Calves", "Bodyweight");
+
+            // Upper Body (Additional)
+            long elevatedPushupId = insertExerciseIfMissing(dao, "Feet-Elevated Push-ups", "Chest", "Bodyweight");
+            long rearDeltFlyId = insertExerciseIfMissing(dao, "Rear-Delt Flyes", "Shoulders", "Dumbbell");
+            long tricepExtId = insertExerciseIfMissing(dao, "Overhead Dumbbell Triceps Extensions", "Triceps", "Dumbbell");
+            long concCurlId = insertExerciseIfMissing(dao, "Concentration Curls", "Biceps", "Dumbbell");
+
+            // Lower Body + Core (Additional)
+            long singleLegRdlId = insertExerciseIfMissing(dao, "Single-Leg Dumbbell Romanian Deadlifts", "Legs", "Dumbbell");
+            long gluteBridgeId = insertExerciseIfMissing(dao, "Glute Bridges", "Glutes", "Bodyweight");
+            long standingCalfRaiseId = insertExerciseIfMissing(dao, "Standing Calf Raises", "Calves", "Bodyweight");
+            long legRaiseId = insertExerciseIfMissing(dao, "Lying Leg Raises", "Core", "Bodyweight");
+            long plankId = insertExerciseIfMissing(dao, "Forearm Planks", "Core", "Bodyweight");
+
+            // 2. Seed Plans
             if (workoutDao.getAllPlansSync().isEmpty()) {
-                WorkoutPlan p3 = new WorkoutPlan();
-                p3.name = "Full Body";
-                p3.trainingDaysPerWeek = 3;
-                p3.difficulty = "Beginner";
-                long p3Id = workoutDao.insertPlan(p3);
-                
-                if (p3Id != -1) {
-                    workoutDao.insertPlanExercise(createPlanExercise(p3Id, e1Id, 3, "8-12", 0));
-                    workoutDao.insertPlanExercise(createPlanExercise(p3Id, e2Id, 3, "8-12", 1));
-                    workoutDao.insertPlanExercise(createPlanExercise(p3Id, e3Id, 3, "8-12", 2));
-                }
+                // Full Body
+                WorkoutPlan fullBody = new WorkoutPlan();
+                fullBody.name = "Full Body";
+                fullBody.trainingDaysPerWeek = 3;
+                fullBody.difficulty = "Intermediate";
+                fullBody.isRecommended = true;
+                long fullBodyId = workoutDao.insertPlan(fullBody);
+                workoutDao.insertPlanExercise(createPlanExercise(fullBodyId, pushupId, 3, "10-15", 0));
+                workoutDao.insertPlanExercise(createPlanExercise(fullBodyId, dbRowId, 3, "8-12", 1));
+                workoutDao.insertPlanExercise(createPlanExercise(fullBodyId, gobletSquatId, 3, "10-12", 2));
+                workoutDao.insertPlanExercise(createPlanExercise(fullBodyId, lungeId, 3, "10 each", 3));
+                workoutDao.insertPlanExercise(createPlanExercise(fullBodyId, plankId, 3, "60 sec", 4));
+
+                // Leg
+                WorkoutPlan legsPlan = new WorkoutPlan();
+                legsPlan.name = "Leg";
+                legsPlan.trainingDaysPerWeek = 1;
+                legsPlan.difficulty = "Intermediate";
+                legsPlan.isRecommended = true;
+                long legsPlanId = workoutDao.insertPlan(legsPlan);
+                workoutDao.insertPlanExercise(createPlanExercise(legsPlanId, gobletSquatId, 3, "10-12", 0));
+                workoutDao.insertPlanExercise(createPlanExercise(legsPlanId, bulgarianId, 3, "8-10", 1));
+                workoutDao.insertPlanExercise(createPlanExercise(legsPlanId, rdlId, 3, "10-12", 2));
+                workoutDao.insertPlanExercise(createPlanExercise(legsPlanId, gluteBridgeId, 3, "15-20", 3));
+                workoutDao.insertPlanExercise(createPlanExercise(legsPlanId, calfRaiseId, 3, "15-20", 4));
+
+                // Chest & Arm
+                WorkoutPlan chestArmPlan = new WorkoutPlan();
+                chestArmPlan.name = "Chest & Arm";
+                chestArmPlan.trainingDaysPerWeek = 1;
+                chestArmPlan.difficulty = "Intermediate";
+                chestArmPlan.isRecommended = true;
+                long chestArmPlanId = workoutDao.insertPlan(chestArmPlan);
+                workoutDao.insertPlanExercise(createPlanExercise(chestArmPlanId, pushupId, 3, "12-15", 0));
+                workoutDao.insertPlanExercise(createPlanExercise(chestArmPlanId, floorPressId, 3, "8-12", 1));
+                workoutDao.insertPlanExercise(createPlanExercise(chestArmPlanId, bicepCurlId, 3, "10-12", 2));
+                workoutDao.insertPlanExercise(createPlanExercise(chestArmPlanId, tricepExtId, 3, "10-12", 3));
+                workoutDao.insertPlanExercise(createPlanExercise(chestArmPlanId, hammerCurlId, 3, "10-12", 4));
+
+                // Abs
+                WorkoutPlan absPlan = new WorkoutPlan();
+                absPlan.name = "Abs";
+                absPlan.trainingDaysPerWeek = 1;
+                absPlan.difficulty = "Beginner";
+                absPlan.isRecommended = true;
+                long absPlanId = workoutDao.insertPlan(absPlan);
+                workoutDao.insertPlanExercise(createPlanExercise(absPlanId, legRaiseId, 3, "12-15", 0));
+                workoutDao.insertPlanExercise(createPlanExercise(absPlanId, shoulderTapId, 3, "20 total", 1));
+                workoutDao.insertPlanExercise(createPlanExercise(absPlanId, plankId, 3, "60 sec", 2));
             }
 
             // Seed Food

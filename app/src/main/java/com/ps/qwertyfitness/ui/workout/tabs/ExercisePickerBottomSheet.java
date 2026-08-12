@@ -17,24 +17,22 @@ import com.ps.qwertyfitness.data.local.entity.Exercise;
 import com.ps.qwertyfitness.databinding.LayoutExercisePickerBottomSheetBinding;
 import com.ps.qwertyfitness.ui.workout.WorkoutViewModel;
 
+import java.util.List;
+
 public class ExercisePickerBottomSheet extends BottomSheetDialogFragment {
 
     private LayoutExercisePickerBottomSheetBinding binding;
     private WorkoutViewModel viewModel;
     private ExerciseAdapter adapter;
-    private OnExercisePickedListener listener;
+    private OnExercisesPickedListener listener;
 
-    public interface OnExercisePickedListener {
-        void onExercisePicked(Exercise exercise);
+    public interface OnExercisesPickedListener {
+        void onExercisesPicked(List<Exercise> exercises);
     }
 
     public ExercisePickerBottomSheet() {}
 
-    public ExercisePickerBottomSheet(OnExercisePickedListener listener) {
-        this.listener = listener;
-    }
-
-    public void setListener(OnExercisePickedListener listener) {
+    public void setListener(OnExercisesPickedListener listener) {
         this.listener = listener;
     }
 
@@ -49,13 +47,24 @@ public class ExercisePickerBottomSheet extends BottomSheetDialogFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(WorkoutViewModel.class);
+        
+        // Reset search query when opening
+        viewModel.setExerciseSearchQuery("");
 
-        adapter = new ExerciseAdapter(exercise -> {
-            if (listener != null) {
-                listener.onExercisePicked(exercise);
+        adapter = new ExerciseAdapter(new ExerciseAdapter.OnExerciseClickListener() {
+            @Override
+            public void onExerciseClick(Exercise exercise) {
+                // In multi-select mode, this is handled by toggleSelection inside adapter
             }
-            dismiss();
+
+            @Override
+            public void onSelectionChanged(int count) {
+                binding.btnAddSelectedExercises.setVisibility(count > 0 ? View.VISIBLE : View.GONE);
+                binding.btnAddSelectedExercises.setText("ADD " + count + " EXERCISES");
+            }
         });
+        
+        adapter.setMultiSelectMode(true);
 
         binding.recyclerExercisePicker.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerExercisePicker.setAdapter(adapter);
@@ -75,6 +84,13 @@ public class ExercisePickerBottomSheet extends BottomSheetDialogFragment {
 
             @Override
             public void afterTextChanged(Editable s) {}
+        });
+
+        binding.btnAddSelectedExercises.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onExercisesPicked(adapter.getSelectedExercises());
+            }
+            dismiss();
         });
     }
 

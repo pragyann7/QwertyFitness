@@ -9,6 +9,7 @@ import androidx.lifecycle.LiveData;
 import com.ps.qwertyfitness.data.local.entity.LoggedFood;
 import com.ps.qwertyfitness.data.local.entity.UserProfile;
 import com.ps.qwertyfitness.data.local.entity.WeightEntry;
+import com.ps.qwertyfitness.data.local.entity.WorkoutPlan;
 import com.ps.qwertyfitness.data.repository.FitnessRepository;
 
 import java.text.SimpleDateFormat;
@@ -54,6 +55,10 @@ public class HomeViewModel extends AndroidViewModel {
 
     public LiveData<List<LoggedFood>> getLoggedFoodsToday() {
         return repository.getLoggedFoodsForDate(today);
+    }
+
+    public LiveData<List<WorkoutPlan>> getAllPlans() {
+        return repository.getAllPlans();
     }
 
     // Reminder methods

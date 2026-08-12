@@ -14,4 +14,6 @@ public class WorkoutPlan {
     public int trainingDaysPerWeek;
     public String selectedDays; // e.g., "1,3,5"
     public String difficulty;
+    public boolean isRecommended;
+    public String reminderTime;
 }

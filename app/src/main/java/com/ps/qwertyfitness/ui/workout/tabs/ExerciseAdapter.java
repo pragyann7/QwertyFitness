@@ -13,18 +13,24 @@ import com.ps.qwertyfitness.databinding.ItemExerciseBinding;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHolder> {
     
     private List<Exercise> items = new ArrayList<>();
     private final Map<String, Float> prMap = new HashMap<>();
     private OnExerciseClickListener listener;
+    
+    private boolean multiSelectMode = false;
+    private final Set<Long> selectedExerciseIds = new HashSet<>();
 
     public interface OnExerciseClickListener {
         void onExerciseClick(Exercise exercise);
+        void onSelectionChanged(int count);
     }
 
     public ExerciseAdapter() {}
@@ -36,6 +42,26 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
     public void setItems(List<Exercise> items) {
         this.items = items != null ? items : new ArrayList<>();
         notifyDataSetChanged();
+    }
+
+    public void setMultiSelectMode(boolean enabled) {
+        this.multiSelectMode = enabled;
+        if (!enabled) selectedExerciseIds.clear();
+        notifyDataSetChanged();
+    }
+
+    public Set<Long> getSelectedExerciseIds() {
+        return selectedExerciseIds;
+    }
+    
+    public List<Exercise> getSelectedExercises() {
+        List<Exercise> selected = new ArrayList<>();
+        for (Exercise item : items) {
+            if (selectedExerciseIds.contains(item.id)) {
+                selected.add(item);
+            }
+        }
+        return selected;
     }
 
     public void setPersonalRecords(List<ExercisePR> prs) {
@@ -69,11 +95,25 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
             holder.binding.layoutPrBadge.setVisibility(View.INVISIBLE);
         }
 
+        holder.binding.checkExercise.setVisibility(multiSelectMode ? View.VISIBLE : View.GONE);
+        holder.binding.checkExercise.setChecked(selectedExerciseIds.contains(item.id));
+
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
+            if (multiSelectMode) {
+                toggleSelection(item.id);
+            } else if (listener != null) {
                 listener.onExerciseClick(item);
             }
         });
+        
+        holder.binding.checkExercise.setOnClickListener(v -> toggleSelection(item.id));
+    }
+    
+    private void toggleSelection(long id) {
+        if (selectedExerciseIds.contains(id)) selectedExerciseIds.remove(id);
+        else selectedExerciseIds.add(id);
+        notifyDataSetChanged();
+        if (listener != null) listener.onSelectionChanged(selectedExerciseIds.size());
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.ps.qwertyfitness.ui.workout.tabs;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -17,6 +18,9 @@ public class PlanDetailActivity extends AppCompatActivity {
     private ActivityPlanDetailBinding binding;
     private WorkoutViewModel viewModel;
     private PlanDetailAdapter adapter;
+    private long planId;
+    private String planName;
+    private boolean isRecommended;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -24,10 +28,16 @@ public class PlanDetailActivity extends AppCompatActivity {
         binding = ActivityPlanDetailBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         
-        long planId = getIntent().getLongExtra("PLAN_ID", -1);
-        String planName = getIntent().getStringExtra("PLAN_NAME");
+        planId = getIntent().getLongExtra("PLAN_ID", -1);
+        planName = getIntent().getStringExtra("PLAN_NAME");
+        isRecommended = getIntent().getBooleanExtra("IS_RECOMMENDED", false);
         
         binding.toolbar.setTitle(planName);
+        setSupportActionBar(binding.toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+        binding.toolbar.setNavigationOnClickListener(v -> finish());
         
         viewModel = new ViewModelProvider(this).get(WorkoutViewModel.class);
         
@@ -48,5 +58,25 @@ public class PlanDetailActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        if (!isRecommended) {
+            getMenuInflater().inflate(com.ps.qwertyfitness.R.menu.menu_plan_detail, menu);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull android.view.MenuItem item) {
+        if (item.getItemId() == com.ps.qwertyfitness.R.id.action_edit) {
+            Intent intent = new Intent(this, CreatePlanActivity.class);
+            intent.putExtra("PLAN_ID", planId);
+            startActivity(intent);
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

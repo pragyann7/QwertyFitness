@@ -154,6 +154,26 @@ public class FitnessRepository {
         });
     }
 
+    public void updatePlan(WorkoutPlan plan, List<PlanExercise> exercises) {
+        databaseWriteExecutor.execute(() -> {
+            workoutDao.updatePlan(plan);
+            workoutDao.deletePlanExercisesByPlanId(plan.id);
+            for (PlanExercise pe : exercises) {
+                pe.planId = plan.id;
+                workoutDao.insertPlanExercise(pe);
+            }
+        });
+    }
+
+    public void deletePlans(java.util.Set<Long> planIds) {
+        databaseWriteExecutor.execute(() -> {
+            for (Long id : planIds) {
+                workoutDao.deletePlanById(id);
+                workoutDao.deletePlanExercisesByPlanId(id);
+            }
+        });
+    }
+
     public LiveData<List<Exercise>> searchExercises(String query) {
         return exerciseDao.searchExercises("%" + query + "%");
     }

@@ -81,11 +81,14 @@ public class ActiveWorkoutActivity extends AppCompatActivity {
         binding.btn180s.setOnClickListener(v -> viewModel.startRestTimer(180000));
 
         binding.btnAddExercise.setOnClickListener(v -> {
-            com.ps.qwertyfitness.ui.workout.tabs.ExercisePickerBottomSheet bottomSheet = new com.ps.qwertyfitness.ui.workout.tabs.ExercisePickerBottomSheet(exercise -> {
-                ActiveExercise ae = new ActiveExercise(exercise.name, exercise.id, "8-12");
-                ae.sets.add(new com.ps.qwertyfitness.data.local.entity.WorkoutSet());
-                exercises.add(ae);
-                adapter.setItems(exercises);
+            com.ps.qwertyfitness.ui.workout.tabs.ExercisePickerBottomSheet bottomSheet = new com.ps.qwertyfitness.ui.workout.tabs.ExercisePickerBottomSheet();
+            bottomSheet.setListener(exercises -> {
+                for (com.ps.qwertyfitness.data.local.entity.Exercise exercise : exercises) {
+                    ActiveExercise ae = new ActiveExercise(exercise.name, exercise.id, "8-12");
+                    ae.sets.add(new com.ps.qwertyfitness.data.local.entity.WorkoutSet());
+                    ActiveWorkoutActivity.this.exercises.add(ae);
+                }
+                adapter.setItems(ActiveWorkoutActivity.this.exercises);
             });
             bottomSheet.show(getSupportFragmentManager(), "ExercisePicker");
         });

@@ -20,6 +20,7 @@ import android.content.Intent;
 import com.ps.qwertyfitness.ui.workout.active.ActiveWorkoutActivity;
 import com.ps.qwertyfitness.data.local.entity.LoggedFood;
 import com.ps.qwertyfitness.data.local.entity.Reminder;
+import com.ps.qwertyfitness.data.local.entity.WorkoutPlan;
 import com.ps.qwertyfitness.data.repository.FitnessRepository;
 import java.util.List;
 
@@ -71,18 +72,57 @@ public class HomeFragment extends Fragment {
                         updateSchedule(reminders, loggedFoods);
                     });
                 });
-            }
-        });
 
-        binding.btnStartWorkout.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), ActiveWorkoutActivity.class);
-            intent.putExtra("PLAN_NAME", "Push Day");
-            startActivity(intent);
+                homeViewModel.getAllPlans().observe(getViewLifecycleOwner(), plans -> {
+                    updateTodayWorkout(plans);
+                });
+            }
         });
 
         binding.btnManageSchedule.setOnClickListener(v -> {
             startActivity(new Intent(getActivity(), com.ps.qwertyfitness.ui.schedule.ScheduleActivity.class));
         });
+    }
+
+    private void updateTodayWorkout(List<WorkoutPlan> plans) {
+        if (plans == null || plans.isEmpty()) return;
+
+        // Map day of week to plan name
+        String[] days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        int dayOfWeek = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK); // 1 (Sun) to 7 (Sat)
+        String currentDay = days[dayOfWeek - 1];
+
+        WorkoutPlan todayPlan = null;
+        for (WorkoutPlan plan : plans) {
+            if (plan.name.contains(currentDay)) {
+                todayPlan = plan;
+                break;
+            }
+        }
+
+        if (todayPlan != null) {
+            final WorkoutPlan finalPlan = todayPlan;
+            binding.textWorkoutName.setText(todayPlan.name);
+            
+            // Set details based on plan name
+            if (todayPlan.name.contains("Push")) binding.textWorkoutDetails.setText("Chest • Shoulders • Triceps");
+            else if (todayPlan.name.contains("Pull")) binding.textWorkoutDetails.setText("Back • Rear Delts • Biceps");
+            else if (todayPlan.name.contains("Legs")) binding.textWorkoutDetails.setText("Quads • Hamstrings • Glutes • Calves");
+            else if (todayPlan.name.contains("Upper")) binding.textWorkoutDetails.setText("Chest • Back • Shoulders • Arms");
+            else if (todayPlan.name.contains("Lower")) binding.textWorkoutDetails.setText("Quads • Hamstrings • Glutes • Calves • Core");
+
+            binding.btnStartWorkout.setOnClickListener(v -> {
+                Intent intent = new Intent(getActivity(), ActiveWorkoutActivity.class);
+                intent.putExtra("PLAN_ID", finalPlan.id);
+                intent.putExtra("PLAN_NAME", finalPlan.name);
+                startActivity(intent);
+            });
+        } else {
+            binding.textWorkoutName.setText("Rest Day");
+            binding.textWorkoutDetails.setText("Take it easy today!");
+            binding.btnStartWorkout.setEnabled(false);
+            binding.btnStartWorkout.setAlpha(0.5f);
+        }
     }
 
     private void updateSchedule(List<Reminder> reminders, List<LoggedFood> loggedFoods) {

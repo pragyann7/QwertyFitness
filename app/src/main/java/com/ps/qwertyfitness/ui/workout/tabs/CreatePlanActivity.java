@@ -7,6 +7,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.ps.qwertyfitness.data.local.entity.Exercise;
 import com.ps.qwertyfitness.data.local.entity.PlanExercise;
 import com.ps.qwertyfitness.data.local.entity.WorkoutPlan;
 import com.ps.qwertyfitness.data.repository.FitnessRepository;
@@ -24,6 +25,7 @@ public class CreatePlanActivity extends AppCompatActivity {
     private ActivityCreatePlanBinding binding;
     private AddedExerciseAdapter adapter;
     private FitnessRepository repository;
+    private long editingPlanId = -1;
     private final String[] difficultyLevels = {"Beginner", "Intermediate", "Advanced"};
 
     @Override
@@ -33,10 +35,16 @@ public class CreatePlanActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
         
         repository = new FitnessRepository(getApplication());
+        editingPlanId = getIntent().getLongExtra("PLAN_ID", -1);
         
         ArrayAdapter<String> diffAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, difficultyLevels);
         binding.dropdownDifficulty.setAdapter(diffAdapter);
         binding.dropdownDifficulty.setText(difficultyLevels[1], false); // Default to Intermediate
+
+        if (editingPlanId != -1) {
+            loadPlanForEditing(editingPlanId);
+            binding.btnSavePlan.setText("UPDATE PLAN");
+        }
 
         binding.editPlanReminderTime.setOnClickListener(v -> {
             Calendar c = Calendar.getInstance();
@@ -51,7 +59,11 @@ public class CreatePlanActivity extends AppCompatActivity {
         
         binding.btnAddExercise.setOnClickListener(v -> {
             ExercisePickerBottomSheet picker = new ExercisePickerBottomSheet();
-            picker.setListener(exercise -> adapter.addExercise(new PlanExerciseDraft(exercise.id, exercise.name)));
+            picker.setListener(exercises -> {
+                for (Exercise exercise : exercises) {
+                    adapter.addExercise(new PlanExerciseDraft(exercise.id, exercise.name));
+                }
+            });
             picker.show(getSupportFragmentManager(), "ExercisePicker");
         });
         
@@ -73,10 +85,16 @@ public class CreatePlanActivity extends AppCompatActivity {
 
             if (!name.isEmpty()) {
                 WorkoutPlan plan = new WorkoutPlan();
+                if (editingPlanId != -1) plan.id = editingPlanId;
                 plan.name = name;
                 plan.trainingDaysPerWeek = daysCount;
                 plan.selectedDays = selectedDays;
                 plan.difficulty = binding.dropdownDifficulty.getText().toString();
+                plan.isRecommended = false;
+                
+                // Set reminder time
+                String reminderTime = binding.editPlanReminderTime.getText().toString();
+                plan.reminderTime = reminderTime;
                 
                 List<PlanExercise> planExercises = new ArrayList<>();
                 List<PlanExerciseDraft> drafts = adapter.getItems();
@@ -90,11 +108,14 @@ public class CreatePlanActivity extends AppCompatActivity {
                     planExercises.add(pe);
                 }
                 
-                repository.insertPlan(plan, planExercises);
+                if (editingPlanId != -1) {
+                    repository.updatePlan(plan, planExercises);
+                } else {
+                    repository.insertPlan(plan, planExercises);
+                }
 
-                // Auto-create reminder if time is set
-                String reminderTime = binding.editPlanReminderTime.getText().toString();
-                if (!reminderTime.isEmpty()) {
+                // Auto-create/update reminder if time is set
+                if (reminderTime != null && !reminderTime.isEmpty()) {
                     Reminder reminder = new Reminder();
                     reminder.title = "Workout: " + name;
                     reminder.time = reminderTime;
@@ -107,6 +128,39 @@ public class CreatePlanActivity extends AppCompatActivity {
                 }
 
                 finish();
+            }
+        });
+    }
+
+    private void loadPlanForEditing(long planId) {
+        repository.getExercisesForPlan(planId).observe(this, details -> {
+            if (details != null && !details.isEmpty() && adapter.getItemCount() == 0) {
+                WorkoutPlan plan = details.get(0).plan;
+                binding.editPlanName.setText(plan.name);
+                binding.dropdownDifficulty.setText(plan.difficulty, false);
+                binding.editPlanReminderTime.setText(plan.reminderTime);
+                
+                // Set days
+                if (plan.selectedDays != null) {
+                    String[] days = plan.selectedDays.split(",");
+                    for (String d : days) {
+                        if (d.equals("1")) binding.chipMon.setChecked(true);
+                        else if (d.equals("2")) binding.chipTue.setChecked(true);
+                        else if (d.equals("3")) binding.chipWed.setChecked(true);
+                        else if (d.equals("4")) binding.chipThu.setChecked(true);
+                        else if (d.equals("5")) binding.chipFri.setChecked(true);
+                        else if (d.equals("6")) binding.chipSat.setChecked(true);
+                        else if (d.equals("7")) binding.chipSun.setChecked(true);
+                    }
+                }
+                
+                // Add exercises
+                for (com.ps.qwertyfitness.data.local.entity.PlanExerciseWithDetails d : details) {
+                    PlanExerciseDraft draft = new PlanExerciseDraft(d.exercise.id, d.exercise.name);
+                    draft.sets = d.planExercise.sets;
+                    draft.repsRange = d.planExercise.repsRange;
+                    adapter.addExercise(draft);
+                }
             }
         });
     }

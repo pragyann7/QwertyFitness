@@ -12,4 +12,10 @@ public class PlanExerciseWithDetails {
             entityColumn = "id"
     )
     public Exercise exercise;
+
+    @Relation(
+            parentColumn = "planId",
+            entityColumn = "id"
+    )
+    public WorkoutPlan plan;
 }

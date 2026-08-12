@@ -11,25 +11,40 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:padding="20dp">
 
-        <TextView
-            android:id="@+id/text_plan_name"
+        <CheckBox
+            android:id="@+id/check_plan"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Full Body"
-            android:textColor="@color/text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:layout_marginEnd="12dp"
+            android:visibility="gone"
+            app:buttonTint="@color/accent_electric_lime" />
 
-        <TextView
-            android:id="@+id/text_plan_details"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="3 days/week • Beginner"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
+            android:layout_weight="1"
+            android:orientation="vertical">
 
+            <TextView
+                android:id="@+id/text_plan_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Full Body"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_plan_details"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3 days/week • Beginner"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

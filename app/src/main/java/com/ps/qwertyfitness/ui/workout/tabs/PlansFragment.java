@@ -12,9 +12,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.ps.qwertyfitness.data.local.entity.WorkoutPlan;
 import com.ps.qwertyfitness.databinding.FragmentPlansBinding;
 import com.ps.qwertyfitness.ui.workout.WorkoutViewModel;
-import com.ps.qwertyfitness.ui.workout.active.ActiveWorkoutActivity;
 
 public class PlansFragment extends Fragment {
     
@@ -34,11 +34,26 @@ public class PlansFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireParentFragment()).get(WorkoutViewModel.class);
         
-        adapter = new PlansAdapter(plan -> {
-            Intent intent = new Intent(getActivity(), PlanDetailActivity.class);
-            intent.putExtra("PLAN_NAME", plan.name);
-            intent.putExtra("PLAN_ID", plan.id);
-            startActivity(intent);
+        adapter = new PlansAdapter(new PlansAdapter.OnPlanClickListener() {
+            @Override
+            public void onPlanClick(WorkoutPlan plan) {
+                Intent intent = new Intent(getActivity(), PlanDetailActivity.class);
+                intent.putExtra("PLAN_NAME", plan.name);
+                intent.putExtra("PLAN_ID", plan.id);
+                intent.putExtra("IS_RECOMMENDED", plan.isRecommended);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onEditModeChanged(boolean editMode) {
+                binding.layoutSelectionBar.setVisibility(editMode ? View.VISIBLE : View.GONE);
+                binding.btnCreatePlan.setVisibility(editMode ? View.GONE : View.VISIBLE);
+            }
+
+            @Override
+            public void onSelectionChanged(int count) {
+                binding.textSelectionCount.setText(count + " selected");
+            }
         });
         
         binding.recyclerPlans.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -51,6 +66,28 @@ public class PlansFragment extends Fragment {
         binding.btnCreatePlan.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), CreatePlanActivity.class);
             startActivity(intent);
+        });
+
+        binding.btnCancelSelection.setOnClickListener(v -> {
+            adapter.setEditMode(false);
+            binding.layoutSelectionBar.setVisibility(View.GONE);
+            binding.btnCreatePlan.setVisibility(View.VISIBLE);
+        });
+
+        binding.btnDeleteSelected.setOnClickListener(v -> {
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Delete Plans")
+                    .setMessage("Are you sure you want to delete the selected plans?")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        // Pass a copy of the set to avoid race conditions when clearing
+                        java.util.Set<Long> idsToDelete = new java.util.HashSet<>(adapter.getSelectedPlanIds());
+                        viewModel.deletePlans(idsToDelete);
+                        adapter.setEditMode(false);
+                        binding.layoutSelectionBar.setVisibility(View.GONE);
+                        binding.btnCreatePlan.setVisibility(View.VISIBLE);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
         });
     }
 

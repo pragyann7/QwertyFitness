@@ -11,6 +11,7 @@ import com.ps.qwertyfitness.data.local.dao.FoodDao;
 import com.ps.qwertyfitness.data.local.dao.ProgressPhotoDao;
 import com.ps.qwertyfitness.data.local.dao.ReminderDao;
 import com.ps.qwertyfitness.data.local.dao.UserDao;
+import com.ps.qwertyfitness.data.local.dao.WaterDao;
 import com.ps.qwertyfitness.data.local.dao.WeightDao;
 import com.ps.qwertyfitness.data.local.dao.WorkoutDao;
 import com.ps.qwertyfitness.data.local.entity.BodyMeasurement;
@@ -23,6 +24,7 @@ import com.ps.qwertyfitness.data.local.entity.PlanExerciseWithDetails;
 import com.ps.qwertyfitness.data.local.entity.ProgressPhoto;
 import com.ps.qwertyfitness.data.local.entity.Reminder;
 import com.ps.qwertyfitness.data.local.entity.UserProfile;
+import com.ps.qwertyfitness.data.local.entity.WaterLog;
 import com.ps.qwertyfitness.data.local.entity.WeightEntry;
 import com.ps.qwertyfitness.data.local.entity.WorkoutPlan;
 import com.ps.qwertyfitness.data.local.entity.WorkoutSession;
@@ -42,6 +44,7 @@ public class FitnessRepository {
     private final BodyMeasurementDao bodyMeasurementDao;
     private final ProgressPhotoDao progressPhotoDao;
     private final ReminderDao reminderDao;
+    private final WaterDao waterDao;
     private final LiveData<UserProfile> userProfile;
     private final ExecutorService databaseWriteExecutor = Executors.newFixedThreadPool(4);
 
@@ -55,6 +58,7 @@ public class FitnessRepository {
         bodyMeasurementDao = db.bodyMeasurementDao();
         progressPhotoDao = db.progressPhotoDao();
         reminderDao = db.reminderDao();
+        waterDao = db.waterDao();
         userProfile = userDao.getUserProfile();
     }
 
@@ -137,6 +141,59 @@ public class FitnessRepository {
 
     public LiveData<List<WorkoutSession>> getAllSessions() {
         return workoutDao.getAllSessions();
+    }
+
+    public LiveData<java.util.Set<String>> getWorkoutDatesForRange() {
+        androidx.lifecycle.MutableLiveData<java.util.Set<String>> data = new androidx.lifecycle.MutableLiveData<>(new java.util.HashSet<>());
+        databaseWriteExecutor.execute(() -> {
+            List<String> dates = workoutDao.getDistinctWorkoutDatesSync();
+            if (dates != null) {
+                data.postValue(new java.util.HashSet<>(dates));
+            }
+        });
+        return data;
+    }
+
+    public LiveData<Integer> getActiveStreak() {
+        androidx.lifecycle.MutableLiveData<Integer> streakData = new androidx.lifecycle.MutableLiveData<>(0);
+        databaseWriteExecutor.execute(() -> {
+            List<String> dates = workoutDao.getDistinctWorkoutDatesSync();
+            if (dates == null || dates.isEmpty()) {
+                streakData.postValue(0);
+                return;
+            }
+
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            String today = sdf.format(cal.getTime());
+            
+            cal.add(java.util.Calendar.DAY_OF_YEAR, -1);
+            String yesterday = sdf.format(cal.getTime());
+
+            int streak = 0;
+            boolean hasWorkoutToday = dates.contains(today);
+            boolean hasWorkoutYesterday = dates.contains(yesterday);
+
+            if (!hasWorkoutToday && !hasWorkoutYesterday) {
+                streakData.postValue(0);
+                return;
+            }
+
+            // Start from today or yesterday
+            cal = java.util.Calendar.getInstance();
+            if (!hasWorkoutToday) {
+                cal.add(java.util.Calendar.DAY_OF_YEAR, -1);
+            }
+
+            // Count backwards
+            while (dates.contains(sdf.format(cal.getTime()))) {
+                streak++;
+                cal.add(java.util.Calendar.DAY_OF_YEAR, -1);
+            }
+
+            streakData.postValue(streak);
+        });
+        return streakData;
     }
 
     public LiveData<List<PlanExerciseWithDetails>> getExercisesForPlan(long planId) {
@@ -373,15 +430,46 @@ public class FitnessRepository {
         databaseWriteExecutor.execute(() -> reminderDao.updateSnoozeTime(id, snoozeTime));
     }
 
+    // Water methods
+    public LiveData<Integer> getTotalWaterForDate(String date) {
+        return waterDao.getTotalWaterForDate(date);
+    }
+
+    public void logWater(WaterLog log) {
+        databaseWriteExecutor.execute(() -> waterDao.insert(log));
+    }
+
+    public void deleteLastWaterLog(String date) {
+        databaseWriteExecutor.execute(() -> waterDao.deleteLastLogForDate(date));
+    }
+
     public void logActivityCompletion(String activityName) {
+        logActivityCompletion(activityName, new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date()));
+    }
+
+    public void logActivityCompletion(String activityName, String date) {
         databaseWriteExecutor.execute(() -> {
             LoggedFood activity = new LoggedFood();
             activity.foodName = activityName;
             activity.mealType = activityName;
-            activity.date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
+            activity.date = date;
             activity.calories = 0;
             activity.isActivity = true;
             foodDao.logFood(activity);
+        });
+    }
+
+    public void deleteLoggedActivity(String activityName, String date) {
+        databaseWriteExecutor.execute(() -> {
+            List<LoggedFood> logs = foodDao.getLoggedFoodsForDateSync(date);
+            if (logs != null) {
+                for (LoggedFood log : logs) {
+                    if (activityName.equalsIgnoreCase(log.mealType) && log.isActivity) {
+                        foodDao.deleteLoggedFood(log);
+                        break;
+                    }
+                }
+            }
         });
     }
 

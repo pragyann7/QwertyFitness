@@ -14,6 +14,7 @@ import com.ps.qwertyfitness.data.local.dao.FoodDao;
 import com.ps.qwertyfitness.data.local.dao.ProgressPhotoDao;
 import com.ps.qwertyfitness.data.local.dao.ReminderDao;
 import com.ps.qwertyfitness.data.local.dao.UserDao;
+import com.ps.qwertyfitness.data.local.dao.WaterDao;
 import com.ps.qwertyfitness.data.local.dao.WeightDao;
 import com.ps.qwertyfitness.data.local.dao.WorkoutDao;
 import com.ps.qwertyfitness.data.local.entity.BodyMeasurement;
@@ -24,6 +25,7 @@ import com.ps.qwertyfitness.data.local.entity.PlanExercise;
 import com.ps.qwertyfitness.data.local.entity.ProgressPhoto;
 import com.ps.qwertyfitness.data.local.entity.Reminder;
 import com.ps.qwertyfitness.data.local.entity.UserProfile;
+import com.ps.qwertyfitness.data.local.entity.WaterLog;
 import com.ps.qwertyfitness.data.local.entity.WeightEntry;
 import com.ps.qwertyfitness.data.local.entity.WorkoutPlan;
 import com.ps.qwertyfitness.data.local.entity.WorkoutSession;
@@ -31,7 +33,7 @@ import com.ps.qwertyfitness.data.local.entity.WorkoutSet;
 
 import java.util.concurrent.Executors;
 
-@Database(entities = {UserProfile.class, WorkoutPlan.class, Exercise.class, FoodItem.class, LoggedFood.class, WorkoutSession.class, WorkoutSet.class, WeightEntry.class, PlanExercise.class, BodyMeasurement.class, ProgressPhoto.class, Reminder.class}, version = 27, exportSchema = false)
+@Database(entities = {UserProfile.class, WorkoutPlan.class, Exercise.class, FoodItem.class, LoggedFood.class, WorkoutSession.class, WorkoutSet.class, WeightEntry.class, PlanExercise.class, BodyMeasurement.class, ProgressPhoto.class, Reminder.class, WaterLog.class}, version = 28, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     
     public abstract UserDao userDao();
@@ -42,6 +44,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract BodyMeasurementDao bodyMeasurementDao();
     public abstract ProgressPhotoDao progressPhotoDao();
     public abstract ReminderDao reminderDao();
+    public abstract WaterDao waterDao();
     
     private static volatile AppDatabase INSTANCE;
     

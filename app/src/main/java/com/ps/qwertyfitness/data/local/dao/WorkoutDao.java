@@ -57,6 +57,9 @@ public interface WorkoutDao {
     
     @Query("SELECT * FROM workout_sessions ORDER BY startTime DESC")
     LiveData<List<WorkoutSession>> getAllSessions();
+
+    @Query("SELECT DISTINCT date FROM workout_sessions ORDER BY date DESC")
+    List<String> getDistinctWorkoutDatesSync();
     
     @Query("SELECT * FROM workout_sets WHERE sessionId = :sessionId")
     LiveData<List<WorkoutSet>> getSetsForSession(long sessionId);

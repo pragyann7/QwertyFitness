@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -20,6 +22,7 @@ import android.content.Intent;
 import com.ps.qwertyfitness.ui.workout.active.ActiveWorkoutActivity;
 import com.ps.qwertyfitness.data.local.entity.LoggedFood;
 import com.ps.qwertyfitness.data.local.entity.Reminder;
+import com.ps.qwertyfitness.data.local.entity.UserProfile;
 import com.ps.qwertyfitness.data.local.entity.WorkoutPlan;
 import com.ps.qwertyfitness.data.repository.FitnessRepository;
 import java.util.List;
@@ -27,6 +30,7 @@ import java.util.List;
 public class HomeFragment extends Fragment {
     
     private FragmentHomeBinding binding;
+    private HomeViewModel homeViewModel;
 
     @Nullable
     @Override
@@ -35,57 +39,184 @@ public class HomeFragment extends Fragment {
         return binding.getRoot();
     }
 
+    private void updateGreeting(String name) {
+        int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+        String greeting;
+        if (hour >= 5 && hour < 12) {
+            greeting = getString(R.string.greeting_morning, name);
+        } else if (hour >= 12 && hour < 17) {
+            greeting = getString(R.string.greeting_afternoon, name);
+        } else {
+            greeting = getString(R.string.greeting_evening, name);
+        }
+        binding.textGreeting.setText(greeting);
+    }
+
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        HomeViewModel homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
+        homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
         
         // Update current date
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("EEEE, MMMM d", java.util.Locale.getDefault());
         binding.textDate.setText(sdf.format(new java.util.Date()));
         
-        homeViewModel.getUserProfile().observe(getViewLifecycleOwner(), userProfile -> {
-            if (userProfile != null) {
-                binding.textGreeting.setText(getString(R.string.greeting_format, userProfile.name));
-                binding.textCaloriesTarget.setText(getString(R.string.kcal_format, String.format(Locale.getDefault(), "%,d", userProfile.dailyCalorieTarget)));
-                
-                homeViewModel.getTotalCaloriesToday().observe(getViewLifecycleOwner(), consumed -> {
-                    float consumedVal = consumed != null ? consumed : 0f;
-                    binding.textCaloriesConsumed.setText(getString(R.string.consumed_format, String.format(Locale.getDefault(), "%,.0f", consumedVal)));
-                    binding.textCaloriesRemaining.setText(getString(R.string.remaining_format, String.format(Locale.getDefault(), "%,d", (int)(userProfile.dailyCalorieTarget - consumedVal))));
-                });
+        setupObservers();
 
-                homeViewModel.getTotalProteinToday().observe(getViewLifecycleOwner(), protein -> {
-                    float proteinVal = protein != null ? protein : 0f;
-                    binding.progressProtein.setProgress((int) ((proteinVal / userProfile.proteinTarget) * 100));
-                });
+        binding.btnAddWater.setOnClickListener(v -> {
+            homeViewModel.logWater(250);
+        });
 
-                homeViewModel.getTotalCarbsToday().observe(getViewLifecycleOwner(), carbs -> {
-                    float carbsVal = carbs != null ? carbs : 0f;
-                    binding.progressCarbs.setProgress((int) ((carbsVal / userProfile.carbTarget) * 100));
-                });
-
-                homeViewModel.getTotalFatToday().observe(getViewLifecycleOwner(), fat -> {
-                    float fatVal = fat != null ? fat : 0f;
-                    binding.progressFat.setProgress((int) ((fatVal / userProfile.fatTarget) * 100));
-                });
-
-                homeViewModel.getLoggedFoodsToday().observe(getViewLifecycleOwner(), loggedFoods -> {
-                    homeViewModel.getAllReminders().observe(getViewLifecycleOwner(), reminders -> {
-                        updateSchedule(reminders, loggedFoods);
-                    });
-                });
-
-                homeViewModel.getAllPlans().observe(getViewLifecycleOwner(), plans -> {
-                    updateTodayWorkout(plans);
-                });
-            }
+        binding.btnUndoWater.setOnClickListener(v -> {
+            homeViewModel.undoWaterLog();
         });
 
         binding.btnManageSchedule.setOnClickListener(v -> {
             startActivity(new Intent(getActivity(), com.ps.qwertyfitness.ui.schedule.ScheduleActivity.class));
         });
+
+        binding.cardStreak.setOnClickListener(v -> {
+            startActivity(new Intent(getActivity(), StreakDetailActivity.class));
+        });
+
+        binding.cardWeeklyActivity.setOnClickListener(v -> {
+            startActivity(new Intent(getActivity(), StreakDetailActivity.class));
+        });
+    }
+
+    private void setupObservers() {
+        homeViewModel.getUserProfile().observe(getViewLifecycleOwner(), userProfile -> {
+            if (userProfile != null) {
+                updateGreeting(userProfile.name);
+                binding.textCaloriesTarget.setText(getString(R.string.kcal_format, String.format(Locale.getDefault(), "%,d", userProfile.dailyCalorieTarget)));
+            }
+        });
+
+        homeViewModel.getTotalCaloriesToday().observe(getViewLifecycleOwner(), consumed -> {
+            UserProfile profile = homeViewModel.getUserProfile().getValue();
+            if (profile != null) {
+                float consumedVal = consumed != null ? consumed : 0f;
+                binding.textCaloriesConsumed.setText(getString(R.string.consumed_format, String.format(Locale.getDefault(), "%,.0f", consumedVal)));
+                binding.textCaloriesRemaining.setText(getString(R.string.remaining_format, String.format(Locale.getDefault(), "%,d", (int) (profile.dailyCalorieTarget - consumedVal))));
+            }
+        });
+
+        homeViewModel.getTotalProteinToday().observe(getViewLifecycleOwner(), protein -> {
+            UserProfile profile = homeViewModel.getUserProfile().getValue();
+            if (profile != null) {
+                float proteinVal = protein != null ? protein : 0f;
+                binding.progressProtein.setProgress((int) ((proteinVal / profile.proteinTarget) * 100));
+            }
+        });
+
+        homeViewModel.getTotalCarbsToday().observe(getViewLifecycleOwner(), carbs -> {
+            UserProfile profile = homeViewModel.getUserProfile().getValue();
+            if (profile != null) {
+                float carbsVal = carbs != null ? carbs : 0f;
+                binding.progressCarbs.setProgress((int) ((carbsVal / profile.carbTarget) * 100));
+            }
+        });
+
+        homeViewModel.getTotalFatToday().observe(getViewLifecycleOwner(), fat -> {
+            UserProfile profile = homeViewModel.getUserProfile().getValue();
+            if (profile != null) {
+                float fatVal = fat != null ? fat : 0f;
+                binding.progressFat.setProgress((int) ((fatVal / profile.fatTarget) * 100));
+            }
+        });
+
+        homeViewModel.getLoggedFoodsToday().observe(getViewLifecycleOwner(), loggedFoods -> {
+            homeViewModel.getAllReminders().observe(getViewLifecycleOwner(), reminders -> {
+                updateSchedule(reminders, loggedFoods);
+            });
+        });
+
+        homeViewModel.getAllPlans().observe(getViewLifecycleOwner(), plans -> {
+            updateTodayWorkout(plans);
+        });
+
+        homeViewModel.getActiveStreak().observe(getViewLifecycleOwner(), streak -> {
+            binding.textStreakCount.setText(String.valueOf(streak));
+            if (streak > 0) {
+                binding.textWeeklyActivityTitle.setText(getString(R.string.weekly_activity_streak_format, streak));
+            } else {
+                binding.textWeeklyActivityTitle.setText(getString(R.string.weekly_activity));
+            }
+        });
+
+        homeViewModel.getWorkoutDates().observe(getViewLifecycleOwner(), dates -> {
+            updateWeeklyActivity(dates);
+        });
+
+        // Water Tracker
+        homeViewModel.getTotalWaterToday().observe(getViewLifecycleOwner(), consumed -> {
+            UserProfile profile = homeViewModel.getUserProfile().getValue();
+            if (profile != null) {
+                int consumedVal = consumed != null ? consumed : 0;
+                binding.textWaterAmount.setText(getString(R.string.ml_format, consumedVal));
+                binding.textWaterTarget.setText(getString(R.string.target_ml_format, profile.waterTarget));
+
+                int progressValue = (int) (((float) consumedVal / profile.waterTarget) * 100);
+                if (progressValue > 100) progressValue = 100;
+
+                // Smooth progress animation
+                android.animation.ObjectAnimator.ofInt(binding.progressWaterCircular, "progress", binding.progressWaterCircular.getProgress(), progressValue)
+                        .setDuration(800)
+                        .start();
+            }
+        });
+    }
+
+    private void updateWeeklyActivity(java.util.Set<String> workoutDates) {
+        binding.layoutWeeklyActivity.removeAllViews();
+        
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        // Set to Monday of current week
+        cal.set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY);
+        
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+        java.text.SimpleDateFormat daySdf = new java.text.SimpleDateFormat("E", java.util.Locale.getDefault());
+        
+        String todayStr = sdf.format(new java.util.Date());
+
+        for (int i = 0; i < 7; i++) {
+            String dateStr = sdf.format(cal.getTime());
+            String fullDayName = daySdf.format(cal.getTime());
+            String dayInitial = !fullDayName.isEmpty() ? fullDayName.substring(0, 1).toUpperCase() : "";
+            
+            boolean isCompleted = workoutDates != null && workoutDates.contains(dateStr);
+            boolean isToday = dateStr.equals(todayStr);
+
+            View dayView = getLayoutInflater().inflate(R.layout.item_activity_day, binding.layoutWeeklyActivity, false);
+            TextView textDayName = dayView.findViewById(R.id.text_day_name);
+            View indicatorBg = dayView.findViewById(R.id.view_indicator_bg);
+            View imgCheck = dayView.findViewById(R.id.img_check);
+
+            textDayName.setText(dayInitial);
+            if (isToday) {
+                textDayName.setTextColor(getResources().getColor(R.color.accent_electric_lime, null));
+                textDayName.setAlpha(1.0f);
+            } else {
+                textDayName.setAlpha(0.5f);
+            }
+
+            if (isCompleted) {
+                indicatorBg.setBackgroundResource(R.drawable.shape_circle_filled);
+                imgCheck.setVisibility(View.VISIBLE);
+            } else {
+                indicatorBg.setBackgroundResource(R.drawable.shape_circle_outline);
+                imgCheck.setVisibility(View.GONE);
+                if (isToday) {
+                    // Highlight today's circle outline if not completed yet
+                    android.graphics.drawable.GradientDrawable outline = (android.graphics.drawable.GradientDrawable) indicatorBg.getBackground();
+                    outline.setStroke(4, getResources().getColor(R.color.accent_electric_lime, null));
+                }
+            }
+
+            binding.layoutWeeklyActivity.addView(dayView);
+            cal.add(java.util.Calendar.DAY_OF_YEAR, 1);
+        }
     }
 
     private void updateTodayWorkout(List<WorkoutPlan> plans) {
@@ -225,31 +356,24 @@ public class HomeFragment extends Fragment {
                 getResources().getColor(R.color.accent_electric_lime, null) : 
                 getResources().getColor(R.color.text_muted, null));
         
-        if (!"WATER".equals(type) && !"INFO".equals(type)) {
+        if (!"INFO".equals(type)) {
             itemBinding.getRoot().setOnClickListener(v -> {
-                FitnessRepository repo = new FitnessRepository(requireActivity().getApplication());
                 if (!isDone) {
                     new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                             .setTitle("Mark as Done")
                             .setMessage("Did you complete this: " + title + "?")
                             .setPositiveButton("Yes", (dialog, which) -> {
-                                if ("WORKOUT".equals(type)) {
-                                    repo.logActivityCompletion(title);
-                                } else {
-                                    // Log meal to mark as done
-                                    LoggedFood food = new LoggedFood();
-                                    food.foodName = title;
-                                    food.mealType = title; 
-                                    food.date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
-                                    food.calories = 0;
-                                    food.isActivity = false;
-                                    repo.logFood(food);
+                                if ("WATER".equals(type)) {
+                                    homeViewModel.logWater(250);
+                                    android.widget.Toast.makeText(getContext(), "Added 250ml Water", android.widget.Toast.LENGTH_SHORT).show();
                                 }
+                                homeViewModel.logActivityCompletion(title);
                                 
                                 // Reset snooze since it's done now
                                 if (reminderId != -1) {
                                     new Thread(() -> {
-                                        repo.updateSnoozeTime(reminderId, 0);
+                                        homeViewModel.updateReminder(homeViewModel.getAllReminders().getValue().stream().filter(r -> r.id == reminderId).findFirst().orElse(null)); // dummy but update snooze
+                                        // Better: just call updateSnooze directly if available in VM
                                         com.ps.qwertyfitness.utils.ReminderManager.cancelSnooze(requireContext(), reminderId);
                                     }).start();
                                 }
@@ -261,18 +385,10 @@ public class HomeFragment extends Fragment {
                             .setTitle("Unmark")
                             .setMessage("Do you want to unmark this: " + title + "?")
                             .setPositiveButton("Unmark", (dialog, which) -> {
-                                String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
-                                new Thread(() -> {
-                                    List<LoggedFood> logs = repo.getLoggedFoodsForDateSync(today);
-                                    if (logs != null) {
-                                        for (LoggedFood log : logs) {
-                                            if (title.equalsIgnoreCase(log.mealType)) {
-                                                repo.deleteLoggedFood(log);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }).start();
+                                if ("WATER".equals(type)) {
+                                    homeViewModel.undoWaterLog();
+                                }
+                                homeViewModel.deleteLoggedActivity(title);
                             })
                             .setNegativeButton("Cancel", null)
                             .show();

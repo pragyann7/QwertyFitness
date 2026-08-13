@@ -1,6 +1,7 @@
 package com.ps.qwertyfitness.ui.progress;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -69,11 +70,40 @@ public class ExercisePRAdapter extends ListAdapter<ExercisePR, ExercisePRAdapter
                 repsText += String.format(Locale.getDefault(), " (+%.1f kg)", item.maxWeight);
             }
             holder.binding.textPrWeight.setText(repsText);
+            
+            if (item.initialReps > 0 && item.maxReps > item.initialReps) {
+                float diff = item.maxReps - item.initialReps;
+                float percent = (diff / item.initialReps) * 100;
+                holder.binding.textPrImprovement.setText(String.format(Locale.getDefault(), "+%.0f%%", percent));
+                holder.binding.textPrImprovement.setVisibility(View.VISIBLE);
+            } else {
+                holder.binding.textPrImprovement.setVisibility(View.GONE);
+            }
         } else {
             holder.binding.textPrWeight.setText(String.format(Locale.getDefault(), "%.1f kg x %d", item.maxWeight, item.maxReps));
+            
+            float current1RM = calculate1RM(item.maxWeight, item.maxReps);
+            float initial1RM = calculate1RM(item.initialWeight, item.initialReps);
+            
+            if (initial1RM > 0 && current1RM > initial1RM) {
+                float diff = current1RM - initial1RM;
+                float percent = (diff / initial1RM) * 100;
+                holder.binding.textPrImprovement.setText(String.format(Locale.getDefault(), "+%.0f%%", percent));
+                holder.binding.textPrImprovement.setVisibility(View.VISIBLE);
+            } else {
+                holder.binding.textPrImprovement.setVisibility(View.GONE);
+            }
         }
         
         holder.itemView.setOnClickListener(v -> listener.onPrClick(item));
+    }
+
+    private float calculate1RM(float weight, int reps) {
+        if (reps <= 0) return 0;
+        if (reps == 1) return weight;
+        // Epley Formula: Weight * (1 + 0.0333 * reps)
+        // More robust for higher rep counts
+        return weight * (1 + (reps / 30f));
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

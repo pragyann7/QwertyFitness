@@ -5,4 +5,6 @@ public class ExercisePR {
     public float maxWeight;
     public int maxReps;
     public String equipment;
+    public float initialWeight;
+    public int initialReps;
 }

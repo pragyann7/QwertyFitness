@@ -156,6 +156,9 @@ public class ProgressFragment extends Fragment {
 
         viewModel.getPersonalRecords().observe(getViewLifecycleOwner(), prs -> {
             prAdapter.setItems(prs);
+            if (prs != null) {
+                binding.textTotalPrs.setText(String.format(Locale.getDefault(), "%d TOTAL", prs.size()));
+            }
         });
 
         viewModel.getLatestMeasurement("Chest").observe(getViewLifecycleOwner(), m -> {

@@ -323,14 +323,29 @@
         </com.google.android.material.card.MaterialCardView>
 
         <!-- Strength Progress (PRs) -->
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="PERSONAL RECORDS"
-            android:textColor="@color/text_muted"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="PERSONAL RECORDS"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/text_total_prs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 TOTAL"
+                android:textColor="@color/accent_electric_lime"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_prs"

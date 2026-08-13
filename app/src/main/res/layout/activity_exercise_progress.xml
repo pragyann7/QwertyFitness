@@ -14,20 +14,97 @@
         app:titleTextColor="@color/text_primary" />
 
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_graph"
+        android:id="@+id/card_stats"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
+        android:layout_height="wrap_content"
         android:layout_margin="16dp"
         app:cardBackgroundColor="@color/surface_slate"
         app:cardCornerRadius="16dp"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:strokeWidth="0dp">
 
-        <com.ps.qwertyfitness.ui.progress.TrendGraphView
-            android:id="@+id/exercise_graph"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="16dp" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/text_stat_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ESTIMATED 1RM"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_one_rep_max"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="--"
+                android:textColor="@color/accent_electric_lime"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Best Set"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/text_best_set"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Improvement"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/text_stat_improvement"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="@color/accent_aqua"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Trend Graph -->
+            <com.ps.qwertyfitness.ui.progress.TrendGraphView
+                android:id="@+id/exercise_graph"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:layout_marginTop="24dp" />
+
+        </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
     <TextView
@@ -40,7 +117,7 @@
         android:textSize="12sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/card_graph" />
+        app:layout_constraintTop_toBottomOf="@id/card_stats" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_exercise_history"

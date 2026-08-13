@@ -37,6 +37,11 @@
             android:theme="@style/Theme.QwertyFitness" />
 
         <activity
+            android:name=".ui.home.StreakDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.QwertyFitness" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true" />
         <activity

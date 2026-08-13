@@ -53,6 +53,10 @@ public class FitnessCalculator {
         profile.proteinTarget = proteinTarget;
         profile.fatTarget = fatTarget;
         profile.carbTarget = carbTarget;
+        
+        // Water target: 35ml per kg, rounded to nearest 250ml
+        profile.waterTarget = (int) (Math.round((profile.weight * 35) / 250.0) * 250);
+        if (profile.waterTarget < 2000) profile.waterTarget = 2000;
 
         return profile;
     }

@@ -21,6 +21,7 @@ public class UserProfile {
     public int proteinTarget;
     public int carbTarget;
     public int fatTarget;
+    public int waterTarget;
     
     public int bmr;
     public int tdee;

@@ -13,11 +13,22 @@
     <string name="btn_start_tracking">START TRACKING</string>
 
     <!-- Home Dashboard -->
-    <string name="greeting_format">Good morning, %s</string>
+    <string name="greeting_morning">Good morning, %s</string>
+    <string name="greeting_afternoon">Good afternoon, %s</string>
+    <string name="greeting_evening">Good evening, %s</string>
     <string name="kcal_format">%s kcal</string>
     <string name="consumed_format">%s consumed</string>
     <string name="remaining_format">%s remaining</string>
     <string name="start_workout">START WORKOUT</string>
     <string name="today">TODAY</string>
     <string name="todays_workout">TODAY\'S WORKOUT</string>
+    <string name="weekly_activity">WEEKLY ACTIVITY</string>
+    <string name="weekly_activity_streak_format">WEEKLY ACTIVITY • %d DAY STREAK</string>
+
+    <!-- Water Tracker -->
+    <string name="water_tracker">WATER TRACKER</string>
+    <string name="ml_format">%d ml</string>
+    <string name="target_ml_format">Target: %d ml</string>
+    <string name="add_250ml">+ 250ml</string>
+    <string name="undo">UNDO</string>
 </resources>

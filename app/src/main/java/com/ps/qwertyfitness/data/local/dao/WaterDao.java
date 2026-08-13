@@ -14,7 +14,7 @@ public interface WaterDao {
     @Insert
     void insert(WaterLog log);
 
-    @Query("SELECT SUM(amountMl) FROM water_logs WHERE date = :date")
+    @Query("SELECT COALESCE(SUM(amountMl), 0) FROM water_logs WHERE date = :date")
     LiveData<Integer> getTotalWaterForDate(String date);
 
     @Query("SELECT * FROM water_logs WHERE date = :date ORDER BY timestamp DESC")

@@ -153,7 +153,15 @@ public class ReminderReceiver extends BroadcastReceiver {
             // Reset snooze when marked as done
             repository.updateSnoozeTime(id, 0);
             
-            if ("MEAL".equals(type) || "WATER".equals(type) || "WORKOUT".equals(type) || "WEIGHT".equals(type)) {
+            if ("WATER".equals(type)) {
+                // For water, marking as done from notification automatically adds 250ml to the tracker
+                com.ps.qwertyfitness.data.local.entity.WaterLog log = new com.ps.qwertyfitness.data.local.entity.WaterLog();
+                log.amountMl = 250;
+                log.date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                log.timestamp = System.currentTimeMillis();
+                repository.logWater(log);
+                // We do NOT log water in LoggedFood (Diet tab) anymore as discussed
+            } else if ("MEAL".equals(type) || "WORKOUT".equals(type) || "WEIGHT".equals(type)) {
                 LoggedFood food = new LoggedFood();
                 food.foodName = title;
                 food.mealType = title; 
@@ -229,10 +237,9 @@ public class ReminderReceiver extends BroadcastReceiver {
                 .setContentTitle(title)
                 .setContentText(message)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setSound(soundUri)
                 .setAutoCancel(true)
-                .setFullScreenIntent(contentIntent, true) 
                 .setContentIntent(contentIntent)
                 .addAction(R.drawable.ic_home, "MARK AS DONE", donePendingIntent);
 

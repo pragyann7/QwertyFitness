@@ -31,6 +31,10 @@ public class HomeFragment extends Fragment {
     
     private FragmentHomeBinding binding;
     private HomeViewModel homeViewModel;
+    private UserProfile currentUserProfile;
+    private int currentTotalWater = 0;
+    private List<LoggedFood> currentLoggedFoods;
+    private List<Reminder> currentReminders;
 
     @Nullable
     @Override
@@ -87,49 +91,48 @@ public class HomeFragment extends Fragment {
 
     private void setupObservers() {
         homeViewModel.getUserProfile().observe(getViewLifecycleOwner(), userProfile -> {
+            currentUserProfile = userProfile;
             if (userProfile != null) {
                 updateGreeting(userProfile.name);
                 binding.textCaloriesTarget.setText(getString(R.string.kcal_format, String.format(Locale.getDefault(), "%,d", userProfile.dailyCalorieTarget)));
+                updateWaterUI();
+                updateCaloriesUI(homeViewModel.getTotalCaloriesToday().getValue());
             }
         });
 
         homeViewModel.getTotalCaloriesToday().observe(getViewLifecycleOwner(), consumed -> {
-            UserProfile profile = homeViewModel.getUserProfile().getValue();
-            if (profile != null) {
-                float consumedVal = consumed != null ? consumed : 0f;
-                binding.textCaloriesConsumed.setText(getString(R.string.consumed_format, String.format(Locale.getDefault(), "%,.0f", consumedVal)));
-                binding.textCaloriesRemaining.setText(getString(R.string.remaining_format, String.format(Locale.getDefault(), "%,d", (int) (profile.dailyCalorieTarget - consumedVal))));
-            }
+            updateCaloriesUI(consumed);
         });
 
         homeViewModel.getTotalProteinToday().observe(getViewLifecycleOwner(), protein -> {
-            UserProfile profile = homeViewModel.getUserProfile().getValue();
-            if (profile != null) {
+            if (currentUserProfile != null) {
                 float proteinVal = protein != null ? protein : 0f;
-                binding.progressProtein.setProgress((int) ((proteinVal / profile.proteinTarget) * 100));
+                binding.progressProtein.setProgress((int) ((proteinVal / currentUserProfile.proteinTarget) * 100));
             }
         });
 
         homeViewModel.getTotalCarbsToday().observe(getViewLifecycleOwner(), carbs -> {
-            UserProfile profile = homeViewModel.getUserProfile().getValue();
-            if (profile != null) {
+            if (currentUserProfile != null) {
                 float carbsVal = carbs != null ? carbs : 0f;
-                binding.progressCarbs.setProgress((int) ((carbsVal / profile.carbTarget) * 100));
+                binding.progressCarbs.setProgress((int) ((carbsVal / currentUserProfile.carbTarget) * 100));
             }
         });
 
         homeViewModel.getTotalFatToday().observe(getViewLifecycleOwner(), fat -> {
-            UserProfile profile = homeViewModel.getUserProfile().getValue();
-            if (profile != null) {
+            if (currentUserProfile != null) {
                 float fatVal = fat != null ? fat : 0f;
-                binding.progressFat.setProgress((int) ((fatVal / profile.fatTarget) * 100));
+                binding.progressFat.setProgress((int) ((fatVal / currentUserProfile.fatTarget) * 100));
             }
         });
 
         homeViewModel.getLoggedFoodsToday().observe(getViewLifecycleOwner(), loggedFoods -> {
-            homeViewModel.getAllReminders().observe(getViewLifecycleOwner(), reminders -> {
-                updateSchedule(reminders, loggedFoods);
-            });
+            currentLoggedFoods = loggedFoods;
+            updateSchedule(currentReminders, loggedFoods);
+        });
+
+        homeViewModel.getAllReminders().observe(getViewLifecycleOwner(), reminders -> {
+            currentReminders = reminders;
+            updateSchedule(reminders, currentLoggedFoods);
         });
 
         homeViewModel.getAllPlans().observe(getViewLifecycleOwner(), plans -> {
@@ -151,21 +154,33 @@ public class HomeFragment extends Fragment {
 
         // Water Tracker
         homeViewModel.getTotalWaterToday().observe(getViewLifecycleOwner(), consumed -> {
-            UserProfile profile = homeViewModel.getUserProfile().getValue();
-            if (profile != null) {
-                int consumedVal = consumed != null ? consumed : 0;
-                binding.textWaterAmount.setText(getString(R.string.ml_format, consumedVal));
-                binding.textWaterTarget.setText(getString(R.string.target_ml_format, profile.waterTarget));
-
-                int progressValue = (int) (((float) consumedVal / profile.waterTarget) * 100);
-                if (progressValue > 100) progressValue = 100;
-
-                // Smooth progress animation
-                android.animation.ObjectAnimator.ofInt(binding.progressWaterCircular, "progress", binding.progressWaterCircular.getProgress(), progressValue)
-                        .setDuration(800)
-                        .start();
-            }
+            currentTotalWater = consumed != null ? consumed : 0;
+            updateWaterUI();
+            updateSchedule(currentReminders, currentLoggedFoods);
         });
+    }
+
+    private void updateCaloriesUI(Float consumed) {
+        if (currentUserProfile != null) {
+            float consumedVal = consumed != null ? consumed : 0f;
+            binding.textCaloriesConsumed.setText(getString(R.string.consumed_format, String.format(Locale.getDefault(), "%,.0f", consumedVal)));
+            binding.textCaloriesRemaining.setText(getString(R.string.remaining_format, String.format(Locale.getDefault(), "%,d", (int) (currentUserProfile.dailyCalorieTarget - consumedVal))));
+        }
+    }
+
+    private void updateWaterUI() {
+        if (currentUserProfile != null) {
+            binding.textWaterAmount.setText(getString(R.string.ml_format, currentTotalWater));
+            binding.textWaterTarget.setText(getString(R.string.target_ml_format, currentUserProfile.waterTarget));
+
+            int progressValue = (int) (((float) currentTotalWater / currentUserProfile.waterTarget) * 100);
+            if (progressValue > 100) progressValue = 100;
+
+            // Smooth progress animation
+            android.animation.ObjectAnimator.ofInt(binding.progressWaterCircular, "progress", binding.progressWaterCircular.getProgress(), progressValue)
+                    .setDuration(800)
+                    .start();
+        }
     }
 
     private void updateWeeklyActivity(java.util.Set<String> workoutDates) {
@@ -282,35 +297,53 @@ public class HomeFragment extends Fragment {
         boolean hasItems = false;
 
         if (reminders != null) {
-            for (Reminder reminder : reminders) {
+            // Sort reminders by time
+            java.util.List<Reminder> sortedReminders = new java.util.ArrayList<>(reminders);
+            java.util.Collections.sort(sortedReminders, (r1, r2) -> r1.time.compareTo(r2.time));
+            
+            int waterRemindersCount = 0;
+
+            for (Reminder reminder : sortedReminders) {
                 if (!reminder.enabled) continue;
                 if (!com.ps.qwertyfitness.utils.ReminderManager.isValidDay(reminder, todayCal)) continue;
                 
                 hasItems = true;
-                boolean isDone = isLogged(loggedFoods, reminder.title);
+                boolean isDone;
                 String subtitle;
                 String statusText;
                 int statusIcon = 0;
 
-                if (reminder.snoozeUntil > now && !isDone) {
-                    String snoozeTime = new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new java.util.Date(reminder.snoozeUntil));
-                    subtitle = "LATER (" + snoozeTime + ")";
-                    statusText = "○";
-                } else if ("WATER".equals(reminder.type) && reminder.intervalMinutes > 0) {
-                    long nextTime = com.ps.qwertyfitness.utils.ReminderManager.calculateNextTriggerTime(reminder);
-                    String timeStr = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date(nextTime));
+                if ("WATER".equals(reminder.type)) {
+                    waterRemindersCount++;
+                    // Automatically mark as done if sufficient water logged (each reminder = 250ml)
+                    isDone = (currentTotalWater / 250) >= waterRemindersCount;
                     
-                    if (nextTime > getEndOfDay()) {
-                        subtitle = "Completed for today";
-                        statusText = "✓";
+                    if (reminder.intervalMinutes > 0) {
+                        long nextTime = com.ps.qwertyfitness.utils.ReminderManager.calculateNextTriggerTime(reminder);
+                        String timeStr = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date(nextTime));
+                        
+                        if (nextTime > getEndOfDay()) {
+                            subtitle = "Completed for today";
+                            statusText = "✓";
+                        } else {
+                            subtitle = "Interval: " + reminder.intervalMinutes + "m";
+                            statusText = timeStr;
+                            statusIcon = R.drawable.ic_refresh;
+                        }
                     } else {
-                        subtitle = "Interval: " + reminder.intervalMinutes + "m";
-                        statusText = timeStr;
-                        statusIcon = R.drawable.ic_refresh;
+                        subtitle = isDone ? "Hydrated" : "Upcoming";
+                        statusText = isDone ? "✓" : "○";
                     }
                 } else {
-                    subtitle = isDone ? "Completed" : "Upcoming";
-                    statusText = isDone ? "✓" : "○";
+                    isDone = isLogged(loggedFoods, reminder.title);
+                    if (reminder.snoozeUntil > now && !isDone) {
+                        String snoozeTime = new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new java.util.Date(reminder.snoozeUntil));
+                        subtitle = "LATER (" + snoozeTime + ")";
+                        statusText = "○";
+                    } else {
+                        subtitle = isDone ? "Completed" : "Upcoming";
+                        statusText = isDone ? "✓" : "○";
+                    }
                 }
 
                 addMealToSchedule(reminder.time, reminder.title, subtitle, isDone, reminder.type, statusText, statusIcon, reminder.id);
@@ -356,23 +389,18 @@ public class HomeFragment extends Fragment {
                 getResources().getColor(R.color.accent_electric_lime, null) : 
                 getResources().getColor(R.color.text_muted, null));
         
-        if (!"INFO".equals(type)) {
+        if (!"INFO".equals(type) && !"WATER".equals(type)) {
             itemBinding.getRoot().setOnClickListener(v -> {
                 if (!isDone) {
                     new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                             .setTitle("Mark as Done")
                             .setMessage("Did you complete this: " + title + "?")
                             .setPositiveButton("Yes", (dialog, which) -> {
-                                if ("WATER".equals(type)) {
-                                    homeViewModel.logWater(250);
-                                    android.widget.Toast.makeText(getContext(), "Added 250ml Water", android.widget.Toast.LENGTH_SHORT).show();
-                                }
                                 homeViewModel.logActivityCompletion(title);
                                 
                                 // Reset snooze since it's done now
                                 if (reminderId != -1) {
                                     new Thread(() -> {
-                                        homeViewModel.updateReminder(homeViewModel.getAllReminders().getValue().stream().filter(r -> r.id == reminderId).findFirst().orElse(null)); // dummy but update snooze
                                         // Better: just call updateSnooze directly if available in VM
                                         com.ps.qwertyfitness.utils.ReminderManager.cancelSnooze(requireContext(), reminderId);
                                     }).start();
@@ -385,9 +413,6 @@ public class HomeFragment extends Fragment {
                             .setTitle("Unmark")
                             .setMessage("Do you want to unmark this: " + title + "?")
                             .setPositiveButton("Unmark", (dialog, which) -> {
-                                if ("WATER".equals(type)) {
-                                    homeViewModel.undoWaterLog();
-                                }
                                 homeViewModel.deleteLoggedActivity(title);
                             })
                             .setNegativeButton("Cancel", null)

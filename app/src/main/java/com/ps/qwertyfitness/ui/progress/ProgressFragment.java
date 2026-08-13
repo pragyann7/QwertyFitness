@@ -54,7 +54,22 @@ public class ProgressFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(ProgressViewModel.class);
         
-        historyAdapter = new WeightHistoryAdapter();
+        historyAdapter = new WeightHistoryAdapter(entry -> {
+            if (allWeightEntries != null && allWeightEntries.size() <= 1) {
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Cannot Delete")
+                        .setMessage("This is your only weight log. The app needs at least one weight entry to calculate your daily calorie and macro targets. To change your weight, please log a new entry or edit your profile.")
+                        .setPositiveButton("OK", null)
+                        .show();
+            } else {
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Delete Weight Log?")
+                        .setMessage("Are you sure you want to remove this weight entry from your history?")
+                        .setPositiveButton("Delete", (dialog, which) -> viewModel.deleteWeight(entry))
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            }
+        });
         binding.recyclerWeightHistory.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerWeightHistory.setAdapter(historyAdapter);
 
@@ -70,12 +85,17 @@ public class ProgressFragment extends Fragment {
         setupPhotoObservers();
         setupMeasurementClicks();
         
-        viewModel.getLatestWeight().observe(getViewLifecycleOwner(), weightEntry -> {
-            if (weightEntry != null) {
-                binding.textCurrentWeight.setText(String.format(Locale.getDefault(), "%.1f kg", weightEntry.weight));
-            } else {
-                binding.textCurrentWeight.setText("-- kg");
-            }
+        viewModel.getUserProfile().observe(getViewLifecycleOwner(), profile -> {
+            viewModel.getLatestWeight().observe(getViewLifecycleOwner(), weightEntry -> {
+                if (weightEntry != null) {
+                    binding.textCurrentWeight.setText(String.format(Locale.getDefault(), "%.1f kg", weightEntry.weight));
+                } else if (profile != null) {
+                    // Fallback to profile weight if no history exists yet
+                    binding.textCurrentWeight.setText(String.format(Locale.getDefault(), "%.1f kg", profile.weight));
+                } else {
+                    binding.textCurrentWeight.setText("-- kg");
+                }
+            });
         });
 
         viewModel.getAllWeightEntries().observe(getViewLifecycleOwner(), entries -> {

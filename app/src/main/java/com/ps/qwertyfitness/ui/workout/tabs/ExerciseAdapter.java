@@ -22,11 +22,12 @@ import java.util.Set;
 public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHolder> {
     
     private List<Exercise> items = new ArrayList<>();
-    private final Map<String, Float> prMap = new HashMap<>();
+    private final Map<String, ExercisePR> prMap = new HashMap<>();
     private OnExerciseClickListener listener;
     
     private boolean multiSelectMode = false;
     private final Set<Long> selectedExerciseIds = new HashSet<>();
+    private final Map<Long, Exercise> selectedExercisesMap = new HashMap<>();
 
     public interface OnExerciseClickListener {
         void onExerciseClick(Exercise exercise);
@@ -46,7 +47,10 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
 
     public void setMultiSelectMode(boolean enabled) {
         this.multiSelectMode = enabled;
-        if (!enabled) selectedExerciseIds.clear();
+        if (!enabled) {
+            selectedExerciseIds.clear();
+            selectedExercisesMap.clear();
+        }
         notifyDataSetChanged();
     }
 
@@ -55,20 +59,14 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
     }
     
     public List<Exercise> getSelectedExercises() {
-        List<Exercise> selected = new ArrayList<>();
-        for (Exercise item : items) {
-            if (selectedExerciseIds.contains(item.id)) {
-                selected.add(item);
-            }
-        }
-        return selected;
+        return new ArrayList<>(selectedExercisesMap.values());
     }
 
     public void setPersonalRecords(List<ExercisePR> prs) {
         prMap.clear();
         if (prs != null) {
             for (ExercisePR pr : prs) {
-                prMap.put(pr.exerciseName, pr.maxWeight);
+                prMap.put(pr.exerciseName, pr);
             }
         }
         notifyDataSetChanged();
@@ -87,10 +85,26 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         holder.binding.textExerciseName.setText(item.name);
         holder.binding.textExerciseDetails.setText(item.targetMuscleGroup + " • " + item.equipment);
         
-        Float pr = prMap.get(item.name);
-        if (pr != null && pr > 0) {
+        ExercisePR pr = prMap.get(item.name);
+        String nameLower = item.name.toLowerCase();
+        boolean isBodyweight = "Bodyweight".equalsIgnoreCase(item.equipment) ||
+                nameLower.contains("push-up") ||
+                nameLower.contains("push up") ||
+                nameLower.contains("plank") ||
+                nameLower.contains("sit-up") ||
+                nameLower.contains("leg raise");
+
+        if (pr != null) {
             holder.binding.layoutPrBadge.setVisibility(View.VISIBLE);
-            holder.binding.textExercisePr.setText(String.format(Locale.getDefault(), "%.1fkg", pr));
+            if (isBodyweight) {
+                String prText = String.format(Locale.getDefault(), "%d reps", pr.maxReps);
+                if (pr.maxWeight > 0) {
+                    prText += String.format(Locale.getDefault(), " (+%.1fkg)", pr.maxWeight);
+                }
+                holder.binding.textExercisePr.setText(prText);
+            } else {
+                holder.binding.textExercisePr.setText(String.format(Locale.getDefault(), "%.1fkg x %d", pr.maxWeight, pr.maxReps));
+            }
         } else {
             holder.binding.layoutPrBadge.setVisibility(View.INVISIBLE);
         }
@@ -100,18 +114,23 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
 
         holder.itemView.setOnClickListener(v -> {
             if (multiSelectMode) {
-                toggleSelection(item.id);
+                toggleSelection(item);
             } else if (listener != null) {
                 listener.onExerciseClick(item);
             }
         });
         
-        holder.binding.checkExercise.setOnClickListener(v -> toggleSelection(item.id));
+        holder.binding.checkExercise.setOnClickListener(v -> toggleSelection(item));
     }
     
-    private void toggleSelection(long id) {
-        if (selectedExerciseIds.contains(id)) selectedExerciseIds.remove(id);
-        else selectedExerciseIds.add(id);
+    private void toggleSelection(Exercise exercise) {
+        if (selectedExerciseIds.contains(exercise.id)) {
+            selectedExerciseIds.remove(exercise.id);
+            selectedExercisesMap.remove(exercise.id);
+        } else {
+            selectedExerciseIds.add(exercise.id);
+            selectedExercisesMap.put(exercise.id, exercise);
+        }
         notifyDataSetChanged();
         if (listener != null) listener.onSelectionChanged(selectedExerciseIds.size());
     }

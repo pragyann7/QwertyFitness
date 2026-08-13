@@ -47,17 +47,7 @@ public class WorkoutSummaryActivity extends AppCompatActivity {
             if (!note.isEmpty() && sessionId != -1) {
                 new Thread(() -> {
                     com.ps.qwertyfitness.data.local.AppDatabase db = com.ps.qwertyfitness.data.local.AppDatabase.getDatabase(this);
-                    com.ps.qwertyfitness.data.local.entity.WorkoutSession session = new com.ps.qwertyfitness.data.local.entity.WorkoutSession();
-                    session.id = sessionId;
-                    session.planName = getIntent().getStringExtra("PLAN_NAME");
-                    session.totalVolume = getIntent().getIntExtra("VOLUME", 0);
-                    session.totalSets = getIntent().getIntExtra("SETS", 0);
-                    session.totalPRs = getIntent().getIntExtra("PRS", 0);
-                    session.startTime = System.currentTimeMillis() - getIntent().getLongExtra("DURATION", 0);
-                    session.endTime = System.currentTimeMillis();
-                    session.date = new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new java.util.Date());
-                    session.note = note;
-                    db.workoutDao().updateSession(session);
+                    db.workoutDao().updateSessionNote(sessionId, note);
                 }).start();
             }
             finish();

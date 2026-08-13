@@ -46,15 +46,25 @@ public class ActiveExerciseAdapter extends RecyclerView.Adapter<ActiveExerciseAd
         holder.binding.textExerciseName.setText(exercise.name);
         holder.binding.textPreviousSession.setText(exercise.previousSession);
         
+        boolean isBodyweight = "Bodyweight".equalsIgnoreCase(exercise.equipment);
+        holder.binding.textWeightLabel.setText(isBodyweight ? "Extra (kg)" : "Weight");
+
         holder.binding.layoutSets.removeAllViews();
         for (int i = 0; i < exercise.sets.size(); i++) {
             WorkoutSet set = exercise.sets.get(i);
             ItemActiveSetBinding setBinding = ItemActiveSetBinding.inflate(LayoutInflater.from(holder.itemView.getContext()), holder.binding.layoutSets, false);
             setBinding.textSetNumber.setText(String.valueOf(i + 1));
             setBinding.editWeight.setText(set.weight > 0 ? String.valueOf(set.weight) : "");
+            setBinding.editWeight.setHint("0"); 
+            
             setBinding.editReps.setText(set.reps > 0 ? String.valueOf(set.reps) : "");
             setBinding.editReps.setHint(exercise.targetReps);
             setBinding.checkCompleted.setChecked(set.isCompleted);
+            
+            // Set input order: for bodyweight, reps is primary
+            if (isBodyweight) {
+                setBinding.editReps.requestFocus();
+            }
             
             setBinding.editWeight.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}

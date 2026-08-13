@@ -12,6 +12,7 @@ import com.ps.qwertyfitness.data.local.entity.BodyMeasurement;
 import com.ps.qwertyfitness.data.local.entity.ExerciseProgressPoint;
 import com.ps.qwertyfitness.data.local.entity.ExercisePR;
 import com.ps.qwertyfitness.data.local.entity.ProgressPhoto;
+import com.ps.qwertyfitness.data.local.entity.UserProfile;
 import com.ps.qwertyfitness.data.local.entity.WeightEntry;
 import com.ps.qwertyfitness.data.local.entity.WorkoutSetWithDate;
 import com.ps.qwertyfitness.data.repository.FitnessRepository;
@@ -55,6 +56,10 @@ public class ProgressViewModel extends AndroidViewModel {
         return repository.getLatestWeight();
     }
 
+    public LiveData<UserProfile> getUserProfile() {
+        return repository.getUserProfile();
+    }
+
     public void setGraphFilter(String filter) {
         graphFilter.setValue(filter);
     }
@@ -77,6 +82,10 @@ public class ProgressViewModel extends AndroidViewModel {
         entry.date = date;
         entry.timestamp = timestamp;
         repository.insertWeight(entry);
+    }
+
+    public void deleteWeight(WeightEntry entry) {
+        repository.deleteWeight(entry);
     }
 
     public LiveData<BodyMeasurement> getLatestMeasurement(String partName) {
@@ -103,6 +112,14 @@ public class ProgressViewModel extends AndroidViewModel {
 
     public LiveData<List<ExerciseProgressPoint>> getExerciseProgressPoints(String exerciseName) {
         return repository.getExerciseProgressPoints(exerciseName);
+    }
+
+    public LiveData<com.ps.qwertyfitness.data.local.entity.Exercise> getExerciseDetails(String exerciseName) {
+        MutableLiveData<com.ps.qwertyfitness.data.local.entity.Exercise> data = new MutableLiveData<>();
+        new Thread(() -> {
+            data.postValue(repository.getExerciseByNameSync(exerciseName));
+        }).start();
+        return data;
     }
 
     public LiveData<List<ProgressPhoto>> getPhotosByCategory(String category) {

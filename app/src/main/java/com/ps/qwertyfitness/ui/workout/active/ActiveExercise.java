@@ -10,12 +10,14 @@ public class ActiveExercise implements Serializable {
     public String name;
     public long exerciseId;
     public String targetReps;
+    public String equipment;
     public String previousSession = "No previous data";
     public List<WorkoutSet> sets = new ArrayList<>();
 
-    public ActiveExercise(String name, long exerciseId, String targetReps) {
+    public ActiveExercise(String name, long exerciseId, String targetReps, String equipment) {
         this.name = name;
         this.exerciseId = exerciseId;
         this.targetReps = targetReps;
+        this.equipment = equipment;
     }
 }

@@ -16,8 +16,15 @@ import java.util.Locale;
 
 public class WeightHistoryAdapter extends ListAdapter<WeightEntry, WeightHistoryAdapter.ViewHolder> {
     
-    public WeightHistoryAdapter() {
+    private final OnWeightDeleteListener deleteListener;
+
+    public interface OnWeightDeleteListener {
+        void onWeightDelete(WeightEntry entry);
+    }
+
+    public WeightHistoryAdapter(OnWeightDeleteListener deleteListener) {
         super(DIFF_CALLBACK);
+        this.deleteListener = deleteListener;
     }
 
     private static final DiffUtil.ItemCallback<WeightEntry> DIFF_CALLBACK = new DiffUtil.ItemCallback<WeightEntry>() {
@@ -48,6 +55,11 @@ public class WeightHistoryAdapter extends ListAdapter<WeightEntry, WeightHistory
         WeightEntry item = getItem(position);
         holder.binding.textWeight.setText(String.format(Locale.getDefault(), "%.1f kg", item.weight));
         holder.binding.textDate.setText(item.date);
+        
+        holder.itemView.setOnLongClickListener(v -> {
+            deleteListener.onWeightDelete(item);
+            return true;
+        });
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

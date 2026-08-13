@@ -52,9 +52,15 @@ public class ReminderReceiver extends BroadcastReceiver {
             return;
         }
 
-        // IMPORTANT: Check if already done before showing notification (e.g. for snooze)
+        // IMPORTANT: Check if reminder still exists and is enabled
         new Thread(() -> {
             FitnessRepository repo = new FitnessRepository((android.app.Application) context.getApplicationContext());
+            
+            com.ps.qwertyfitness.data.local.entity.Reminder dbReminder = repo.getReminderByIdSync(reminderId);
+            if (dbReminder == null || !dbReminder.enabled) {
+                return; // Stop if reminder was deleted or disabled
+            }
+
             String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
             boolean alreadyLogged = false;
             

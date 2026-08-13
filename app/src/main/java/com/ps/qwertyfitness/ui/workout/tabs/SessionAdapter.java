@@ -1,6 +1,7 @@
 package com.ps.qwertyfitness.ui.workout.tabs;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -45,7 +46,14 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHold
         holder.binding.textSessionDate.setText(item.date);
         holder.binding.textSessionVolume.setText(String.format(Locale.getDefault(), "%,d kg", item.totalVolume));
         holder.binding.textSessionSets.setText(String.format(Locale.getDefault(), "%d sets", item.totalSets));
-        
+
+        if (item.totalPRs > 0) {
+            holder.binding.textSessionPrs.setVisibility(View.VISIBLE);
+            holder.binding.textSessionPrs.setText(String.format(Locale.getDefault(), "%d PRs", item.totalPRs));
+        } else {
+            holder.binding.textSessionPrs.setVisibility(View.GONE);
+        }
+
         holder.itemView.setOnClickListener(v -> listener.onSessionClick(item));
     }
 

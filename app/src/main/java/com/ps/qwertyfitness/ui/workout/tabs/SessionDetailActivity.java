@@ -76,7 +76,7 @@ public class SessionDetailActivity extends AppCompatActivity {
         for (WorkoutSet set : sets) {
             ActiveExercise ae = groupMap.get(set.exerciseName);
             if (ae == null) {
-                ae = new ActiveExercise(set.exerciseName, set.exerciseId, "");
+                ae = new ActiveExercise(set.exerciseName, set.exerciseId, "", "");
                 groupMap.put(set.exerciseName, ae);
                 result.add(ae);
             }

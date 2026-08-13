@@ -18,4 +18,5 @@ public class LoggedFood {
     
     public String date; // YYYY-MM-DD
     public String mealType; // Breakfast, Lunch, Snack, Dinner
+    public boolean isActivity; // True if this is an activity completion log (e.g. workout), not food
 }

@@ -155,7 +155,7 @@ public class ReminderManager {
         return getTimeCalendar(timeStr).getTimeInMillis();
     }
 
-    private static boolean isValidDay(Reminder reminder, Calendar calendar) {
+    public static boolean isValidDay(Reminder reminder, Calendar calendar) {
         if (reminder.repeatDays == null || reminder.repeatDays.isEmpty()) return true;
         
         int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);

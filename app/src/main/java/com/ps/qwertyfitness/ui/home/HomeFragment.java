@@ -41,6 +41,10 @@ public class HomeFragment extends Fragment {
         
         HomeViewModel homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
         
+        // Update current date
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("EEEE, MMMM d", java.util.Locale.getDefault());
+        binding.textDate.setText(sdf.format(new java.util.Date()));
+        
         homeViewModel.getUserProfile().observe(getViewLifecycleOwner(), userProfile -> {
             if (userProfile != null) {
                 binding.textGreeting.setText(getString(R.string.greeting_format, userProfile.name));
@@ -87,14 +91,16 @@ public class HomeFragment extends Fragment {
     private void updateTodayWorkout(List<WorkoutPlan> plans) {
         if (plans == null || plans.isEmpty()) return;
 
-        // Map day of week to plan name
-        String[] days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-        int dayOfWeek = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK); // 1 (Sun) to 7 (Sat)
-        String currentDay = days[dayOfWeek - 1];
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        int dayOfWeek = calendar.get(java.util.Calendar.DAY_OF_WEEK); 
+        int normalizedDay = (dayOfWeek == java.util.Calendar.SUNDAY) ? 7 : dayOfWeek - 1;
+        
+        String[] dayNames = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        String currentDayName = dayNames[dayOfWeek - 1];
 
         WorkoutPlan todayPlan = null;
         for (WorkoutPlan plan : plans) {
-            if (plan.name.contains(currentDay)) {
+            if (isPlanScheduledForDay(plan, normalizedDay, currentDayName)) {
                 todayPlan = plan;
                 break;
             }
@@ -125,16 +131,31 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    private boolean isPlanScheduledForDay(WorkoutPlan plan, int normalizedDay, String dayName) {
+        if (plan.selectedDays != null && !plan.selectedDays.isEmpty()) {
+            String[] days = plan.selectedDays.split(",");
+            for (String d : days) {
+                if (d.trim().equals(String.valueOf(normalizedDay))) return true;
+            }
+            return false;
+        }
+        // Fallback for older plans or recommended ones that might use name-based scheduling
+        return plan.name.toLowerCase().contains(dayName.toLowerCase());
+    }
+
     private void updateSchedule(List<Reminder> reminders, List<LoggedFood> loggedFoods) {
         binding.layoutSchedule.removeAllViews();
         
-        if (reminders == null || reminders.isEmpty()) {
-            addMealToSchedule("08:00", "Breakfast", "No reminders set", false, "MEAL", "○", 0, -1);
-        } else {
-            long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
+        java.util.Calendar todayCal = java.util.Calendar.getInstance();
+        boolean hasItems = false;
+
+        if (reminders != null) {
             for (Reminder reminder : reminders) {
                 if (!reminder.enabled) continue;
+                if (!com.ps.qwertyfitness.utils.ReminderManager.isValidDay(reminder, todayCal)) continue;
                 
+                hasItems = true;
                 boolean isDone = isLogged(loggedFoods, reminder.title);
                 String subtitle;
                 String statusText;
@@ -149,12 +170,13 @@ public class HomeFragment extends Fragment {
                     String timeStr = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(new java.util.Date(nextTime));
                     
                     if (nextTime > getEndOfDay()) {
-                        subtitle = "Tomorrow: " + timeStr;
+                        subtitle = "Completed for today";
+                        statusText = "✓";
                     } else {
                         subtitle = "Interval: " + reminder.intervalMinutes + "m";
+                        statusText = timeStr;
+                        statusIcon = R.drawable.ic_refresh;
                     }
-                    statusText = timeStr;
-                    statusIcon = R.drawable.ic_refresh;
                 } else {
                     subtitle = isDone ? "Completed" : "Upcoming";
                     statusText = isDone ? "✓" : "○";
@@ -162,6 +184,10 @@ public class HomeFragment extends Fragment {
 
                 addMealToSchedule(reminder.time, reminder.title, subtitle, isDone, reminder.type, statusText, statusIcon, reminder.id);
             }
+        }
+
+        if (!hasItems) {
+            addMealToSchedule("--:--", "Free Day", "Nothing scheduled for today", false, "INFO", "○", 0, -1);
         }
     }
 
@@ -199,21 +225,26 @@ public class HomeFragment extends Fragment {
                 getResources().getColor(R.color.accent_electric_lime, null) : 
                 getResources().getColor(R.color.text_muted, null));
         
-        if (!"WATER".equals(type)) {
+        if (!"WATER".equals(type) && !"INFO".equals(type)) {
             itemBinding.getRoot().setOnClickListener(v -> {
+                FitnessRepository repo = new FitnessRepository(requireActivity().getApplication());
                 if (!isDone) {
                     new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                             .setTitle("Mark as Done")
                             .setMessage("Did you complete this: " + title + "?")
                             .setPositiveButton("Yes", (dialog, which) -> {
-                                FitnessRepository repo = new FitnessRepository(requireActivity().getApplication());
-                                // Log item to mark as done
-                                LoggedFood food = new LoggedFood();
-                                food.foodName = title;
-                                food.mealType = title; 
-                                food.date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
-                                food.calories = 0;
-                                repo.logFood(food);
+                                if ("WORKOUT".equals(type)) {
+                                    repo.logActivityCompletion(title);
+                                } else {
+                                    // Log meal to mark as done
+                                    LoggedFood food = new LoggedFood();
+                                    food.foodName = title;
+                                    food.mealType = title; 
+                                    food.date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
+                                    food.calories = 0;
+                                    food.isActivity = false;
+                                    repo.logFood(food);
+                                }
                                 
                                 // Reset snooze since it's done now
                                 if (reminderId != -1) {
@@ -224,6 +255,26 @@ public class HomeFragment extends Fragment {
                                 }
                             })
                             .setNegativeButton("No", null)
+                            .show();
+                } else {
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Unmark")
+                            .setMessage("Do you want to unmark this: " + title + "?")
+                            .setPositiveButton("Unmark", (dialog, which) -> {
+                                String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
+                                new Thread(() -> {
+                                    List<LoggedFood> logs = repo.getLoggedFoodsForDateSync(today);
+                                    if (logs != null) {
+                                        for (LoggedFood log : logs) {
+                                            if (title.equalsIgnoreCase(log.mealType)) {
+                                                repo.deleteLoggedFood(log);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }).start();
+                            })
+                            .setNegativeButton("Cancel", null)
                             .show();
                 }
             });

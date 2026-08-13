@@ -63,11 +63,30 @@ public class FitnessRepository {
     }
 
     public void insertProfile(UserProfile profile) {
-        databaseWriteExecutor.execute(() -> userDao.insertProfile(profile));
+        databaseWriteExecutor.execute(() -> {
+            userDao.insertProfile(profile);
+            
+            // Automatically log the initial weight from profile into weight history
+            WeightEntry entry = new WeightEntry();
+            entry.weight = profile.weight;
+            entry.date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
+            entry.timestamp = System.currentTimeMillis();
+            weightDao.insert(entry);
+        });
     }
 
     public void updateProfile(UserProfile profile) {
-        databaseWriteExecutor.execute(() -> userDao.updateProfile(profile));
+        databaseWriteExecutor.execute(() -> {
+            userDao.updateProfile(profile);
+            
+            // Check if we should log a new weight entry on profile update
+            // (Optional: only if weight changed significantly or it's a new day)
+            WeightEntry entry = new WeightEntry();
+            entry.weight = profile.weight;
+            entry.date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
+            entry.timestamp = System.currentTimeMillis();
+            weightDao.insert(entry);
+        });
     }
 
     // Food methods
@@ -85,6 +104,10 @@ public class FitnessRepository {
 
     public LiveData<List<LoggedFood>> getLoggedFoodsForDate(String date) {
         return foodDao.getLoggedFoodsForDate(date);
+    }
+
+    public LiveData<List<LoggedFood>> getLoggedFoodsOnlyForDate(String date) {
+        return foodDao.getLoggedFoodsOnlyForDate(date);
     }
 
     public List<LoggedFood> getLoggedFoodsForDateSync(String date) {
@@ -132,6 +155,10 @@ public class FitnessRepository {
         return workoutDao.getMaxWeightForExerciseSync(exerciseName);
     }
 
+    public int getMaxRepsForExercise(String exerciseName) {
+        return workoutDao.getMaxRepsForExerciseSync(exerciseName);
+    }
+
     public LiveData<List<com.ps.qwertyfitness.data.local.entity.ExercisePR>> getPersonalRecords() {
         return workoutDao.getPersonalRecords();
     }
@@ -144,23 +171,52 @@ public class FitnessRepository {
         return workoutDao.getExerciseProgressPoints(exerciseName);
     }
 
-    public void insertPlan(WorkoutPlan plan, List<PlanExercise> exercises) {
+    public void insertPlan(WorkoutPlan plan, List<PlanExercise> exercises, Reminder reminder, Runnable onDone) {
         databaseWriteExecutor.execute(() -> {
             long planId = workoutDao.insertPlan(plan);
             for (PlanExercise pe : exercises) {
                 pe.planId = planId;
                 workoutDao.insertPlanExercise(pe);
             }
+            
+            if (reminder != null) {
+                reminder.planId = planId;
+                long reminderId = reminderDao.insert(reminder);
+                reminder.id = reminderId;
+            }
+            
+            if (onDone != null) {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(onDone);
+            }
         });
     }
 
-    public void updatePlan(WorkoutPlan plan, List<PlanExercise> exercises) {
+    public void updatePlan(WorkoutPlan plan, List<PlanExercise> exercises, Reminder reminder, Runnable onDone) {
         databaseWriteExecutor.execute(() -> {
             workoutDao.updatePlan(plan);
             workoutDao.deletePlanExercisesByPlanId(plan.id);
             for (PlanExercise pe : exercises) {
                 pe.planId = plan.id;
                 workoutDao.insertPlanExercise(pe);
+            }
+            
+            if (reminder != null) {
+                reminder.planId = plan.id;
+                Reminder existing = reminderDao.getReminderByPlanId(plan.id);
+                if (existing != null) {
+                    reminder.id = existing.id;
+                    reminderDao.update(reminder);
+                } else {
+                    long id = reminderDao.insert(reminder);
+                    reminder.id = id;
+                }
+            } else {
+                // If reminder is null, check if there's an existing one to delete
+                reminderDao.deleteByPlanId(plan.id);
+            }
+            
+            if (onDone != null) {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(onDone);
             }
         });
     }
@@ -170,6 +226,7 @@ public class FitnessRepository {
             for (Long id : planIds) {
                 workoutDao.deletePlanById(id);
                 workoutDao.deletePlanExercisesByPlanId(id);
+                reminderDao.deleteByPlanId(id);
             }
         });
     }
@@ -185,6 +242,7 @@ public class FitnessRepository {
     public void insertSession(WorkoutSession session, List<WorkoutSet> sets, Runnable onComplete) {
         databaseWriteExecutor.execute(() -> {
             long sessionId = workoutDao.insertSession(session);
+            session.id = sessionId; // Update the session object with the new ID
             for (WorkoutSet set : sets) {
                 set.sessionId = sessionId;
                 workoutDao.insertSet(set);
@@ -213,7 +271,37 @@ public class FitnessRepository {
     }
 
     public void insertWeight(WeightEntry entry) {
-        databaseWriteExecutor.execute(() -> weightDao.insert(entry));
+        databaseWriteExecutor.execute(() -> {
+            weightDao.insert(entry);
+            
+            // Always sync profile with the absolute latest weight in history
+            WeightEntry latest = weightDao.getLatestWeightSync();
+            if (latest != null) {
+                UserProfile profile = userDao.getUserProfileSync();
+                if (profile != null) {
+                    profile.weight = latest.weight;
+                    com.ps.qwertyfitness.utils.FitnessCalculator.calculateTargets(profile);
+                    userDao.updateProfile(profile);
+                }
+            }
+        });
+    }
+
+    public void deleteWeight(WeightEntry entry) {
+        databaseWriteExecutor.execute(() -> {
+            weightDao.delete(entry);
+            
+            // Sync profile with the new latest weight after deletion
+            WeightEntry newLatest = weightDao.getLatestWeightSync();
+            if (newLatest != null) {
+                UserProfile profile = userDao.getUserProfileSync();
+                if (profile != null) {
+                    profile.weight = newLatest.weight;
+                    com.ps.qwertyfitness.utils.FitnessCalculator.calculateTargets(profile);
+                    userDao.updateProfile(profile);
+                }
+            }
+        });
     }
 
     // Measurement methods
@@ -263,6 +351,10 @@ public class FitnessRepository {
         return reminderDao.getEnabledRemindersSync();
     }
 
+    public Reminder getReminderByIdSync(long id) {
+        return reminderDao.getReminderById(id);
+    }
+
     public void insertReminder(Reminder reminder, Runnable onDone) {
         databaseWriteExecutor.execute(() -> {
             long id = reminderDao.insert(reminder);
@@ -281,7 +373,45 @@ public class FitnessRepository {
         databaseWriteExecutor.execute(() -> reminderDao.updateSnoozeTime(id, snoozeTime));
     }
 
+    public void logActivityCompletion(String activityName) {
+        databaseWriteExecutor.execute(() -> {
+            LoggedFood activity = new LoggedFood();
+            activity.foodName = activityName;
+            activity.mealType = activityName;
+            activity.date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
+            activity.calories = 0;
+            activity.isActivity = true;
+            foodDao.logFood(activity);
+        });
+    }
+
     public void deleteReminder(Reminder reminder) {
         databaseWriteExecutor.execute(() -> reminderDao.delete(reminder));
+    }
+
+    public Exercise getExerciseByNameSync(String name) {
+        return exerciseDao.getExerciseByNameSync(name);
+    }
+
+    public void saveWorkoutReminder(Reminder reminder, Runnable onDone) {
+        databaseWriteExecutor.execute(() -> {
+            if (reminder.planId != null) {
+                Reminder existing = reminderDao.getReminderByPlanId(reminder.planId);
+                if (existing != null) {
+                    reminder.id = existing.id;
+                    reminderDao.update(reminder);
+                } else {
+                    long id = reminderDao.insert(reminder);
+                    reminder.id = id;
+                }
+            } else {
+                long id = reminderDao.insert(reminder);
+                reminder.id = id;
+            }
+            
+            if (onDone != null) {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(onDone);
+            }
+        });
     }
 }

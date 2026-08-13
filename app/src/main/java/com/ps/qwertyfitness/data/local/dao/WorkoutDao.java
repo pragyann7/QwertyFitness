@@ -45,6 +45,9 @@ public interface WorkoutDao {
     
     @Update
     void updateSession(WorkoutSession session);
+
+    @Query("UPDATE workout_sessions SET note = :note WHERE id = :sessionId")
+    void updateSessionNote(long sessionId, String note);
     
     @Insert
     void insertSet(WorkoutSet set);
@@ -64,7 +67,10 @@ public interface WorkoutDao {
     @Query("SELECT MAX(weight) FROM workout_sets WHERE exerciseName = :exerciseName AND isCompleted = 1")
     float getMaxWeightForExerciseSync(String exerciseName);
 
-    @Query("SELECT ws.exerciseName, MAX(ws.weight) as weight, s.startTime as timestamp " +
+    @Query("SELECT MAX(reps) FROM workout_sets WHERE exerciseName = :exerciseName AND isCompleted = 1")
+    int getMaxRepsForExerciseSync(String exerciseName);
+
+    @Query("SELECT ws.exerciseName, MAX(ws.weight) as weight, MAX(ws.reps) as reps, s.startTime as timestamp " +
            "FROM workout_sets ws JOIN workout_sessions s ON ws.sessionId = s.id " +
            "WHERE ws.exerciseName = :exerciseName AND ws.isCompleted = 1 " +
            "GROUP BY s.date ORDER BY s.startTime ASC")
@@ -75,7 +81,12 @@ public interface WorkoutDao {
            "WHERE ws.exerciseName = :exerciseName AND ws.isCompleted = 1 ORDER BY ws.id DESC")
     LiveData<List<WorkoutSetWithDate>> getExerciseHistoryWithDate(String exerciseName);
 
-    @Query("SELECT exerciseName, MAX(weight) as maxWeight FROM workout_sets WHERE isCompleted = 1 GROUP BY exerciseName")
+    @Query("SELECT ws.exerciseName, ws.weight as maxWeight, ws.reps as maxReps, e.equipment as equipment " +
+           "FROM workout_sets ws " +
+           "LEFT JOIN exercises e ON ws.exerciseName = e.name " +
+           "WHERE ws.isCompleted = 1 " +
+           "AND ws.id = (SELECT id FROM workout_sets ws2 WHERE ws2.exerciseName = ws.exerciseName AND ws2.isCompleted = 1 ORDER BY weight DESC, reps DESC, id DESC LIMIT 1) " +
+           "GROUP BY ws.exerciseName")
     LiveData<List<ExercisePR>> getPersonalRecords();
 
     @Query("DELETE FROM workout_plans WHERE id = :planId")

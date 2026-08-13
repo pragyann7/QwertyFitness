@@ -29,6 +29,13 @@ public class ActiveWorkoutActivity extends AppCompatActivity {
         binding = ActivityActiveWorkoutBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                showExitConfirmationDialog();
+            }
+        });
+
         viewModel = new ViewModelProvider(this).get(ActiveWorkoutViewModel.class);
         
         adapter = new ActiveExerciseAdapter(() -> {
@@ -43,13 +50,19 @@ public class ActiveWorkoutActivity extends AppCompatActivity {
         if (planName == null) planName = "Custom Workout";
         
         binding.toolbar.setTitle(planName);
+        setSupportActionBar(binding.toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            binding.toolbar.setNavigationOnClickListener(v -> showExitConfirmationDialog());
+        }
+        
         viewModel.startWorkout(planName);
 
         if (planId != -1) {
             viewModel.getExercisesForPlan(planId).observe(this, planExercises -> {
                 if (planExercises != null && exercises.isEmpty()) { // Only load once
                     for (com.ps.qwertyfitness.data.local.entity.PlanExerciseWithDetails pe : planExercises) {
-                        ActiveExercise ae = new ActiveExercise(pe.exercise.name, pe.exercise.id, pe.planExercise.repsRange);
+                        ActiveExercise ae = new ActiveExercise(pe.exercise.name, pe.exercise.id, pe.planExercise.repsRange, pe.exercise.equipment);
                         for (int i = 0; i < pe.planExercise.sets; i++) {
                             ae.sets.add(new WorkoutSet());
                         }
@@ -84,7 +97,7 @@ public class ActiveWorkoutActivity extends AppCompatActivity {
             com.ps.qwertyfitness.ui.workout.tabs.ExercisePickerBottomSheet bottomSheet = new com.ps.qwertyfitness.ui.workout.tabs.ExercisePickerBottomSheet();
             bottomSheet.setListener(exercises -> {
                 for (com.ps.qwertyfitness.data.local.entity.Exercise exercise : exercises) {
-                    ActiveExercise ae = new ActiveExercise(exercise.name, exercise.id, "8-12");
+                    ActiveExercise ae = new ActiveExercise(exercise.name, exercise.id, "8-12", exercise.equipment);
                     ae.sets.add(new com.ps.qwertyfitness.data.local.entity.WorkoutSet());
                     ActiveWorkoutActivity.this.exercises.add(ae);
                 }
@@ -94,22 +107,38 @@ public class ActiveWorkoutActivity extends AppCompatActivity {
         });
         
         binding.btnFinishWorkout.setOnClickListener(v -> {
-            // Stats will be calculated in ViewModel now
-            viewModel.finishWorkout(exercises, prsBroken -> {
-                // Get totals from currentSession after calculation
-                com.ps.qwertyfitness.data.local.entity.WorkoutSession session = viewModel.getCurrentSession();
-                
-                android.content.Intent intent = new android.content.Intent(this, WorkoutSummaryActivity.class);
-                intent.putExtra("PLAN_NAME", binding.toolbar.getTitle());
-                intent.putExtra("DURATION", System.currentTimeMillis() - viewModel.getStartTime());
-                intent.putExtra("VOLUME", session.totalVolume);
-                intent.putExtra("SETS", session.totalSets);
-                intent.putExtra("PRS", prsBroken);
-                intent.putExtra("SESSION_ID", viewModel.getCurrentSessionId());
-                intent.putExtra("EXERCISES", (java.io.Serializable) exercises);
-                startActivity(intent);
-                finish();
-            });
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                    .setTitle("Finish Workout?")
+                    .setMessage("Are you sure you want to complete this session?")
+                    .setPositiveButton("Finish", (dialog, which) -> {
+                        // Stats will be calculated in ViewModel now
+                        viewModel.finishWorkout(exercises, prsBroken -> {
+                            // Get totals from currentSession after calculation
+                            com.ps.qwertyfitness.data.local.entity.WorkoutSession session = viewModel.getCurrentSession();
+                            
+                            android.content.Intent intent = new android.content.Intent(this, WorkoutSummaryActivity.class);
+                            intent.putExtra("PLAN_NAME", binding.toolbar.getTitle());
+                            intent.putExtra("DURATION", System.currentTimeMillis() - viewModel.getStartTime());
+                            intent.putExtra("VOLUME", session.totalVolume);
+                            intent.putExtra("SETS", session.totalSets);
+                            intent.putExtra("PRS", prsBroken);
+                            intent.putExtra("SESSION_ID", viewModel.getCurrentSessionId());
+                            intent.putExtra("EXERCISES", (java.io.Serializable) exercises);
+                            startActivity(intent);
+                            finish();
+                        });
+                    })
+                    .setNegativeButton("Resume", null)
+                    .show();
         });
+    }
+
+    private void showExitConfirmationDialog() {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("Discard Workout?")
+                .setMessage("Are you sure you want to leave? Your current progress in this session will not be saved.")
+                .setPositiveButton("Discard", (dialog, which) -> finish())
+                .setNegativeButton("Keep Training", null)
+                .show();
     }
 }

@@ -18,6 +18,8 @@ public class Reminder {
     public String endTime; // HH:mm (Optional, for interval reminders)
     public long snoozeUntil; // Timestamp until which the reminder is snoozed
     
+    public Long planId; // Linked workout plan ID
+    
     public int targetProtein;
     public int targetCarbs;
     public int targetFat;

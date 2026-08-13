@@ -46,7 +46,7 @@ public class DietViewModel extends AndroidViewModel {
     }
 
     public LiveData<List<LoggedFood>> getLoggedFoodsToday() {
-        return repository.getLoggedFoodsForDate(today);
+        return repository.getLoggedFoodsOnlyForDate(today);
     }
 
     public LiveData<Float> getTotalCaloriesToday() {

@@ -40,6 +40,7 @@ public class HistoryFragment extends Fragment {
             intent.putExtra("DATE", session.date);
             intent.putExtra("VOLUME", session.totalVolume);
             intent.putExtra("SETS", session.totalSets);
+            intent.putExtra("PRS", session.totalPRs);
             intent.putExtra("DURATION", (session.endTime - session.startTime));
             intent.putExtra("NOTES", session.note);
             startActivity(intent);

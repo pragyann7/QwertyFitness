@@ -35,7 +35,7 @@ public class ExercisePRAdapter extends ListAdapter<ExercisePR, ExercisePRAdapter
 
         @Override
         public boolean areContentsTheSame(@NonNull ExercisePR oldItem, @NonNull ExercisePR newItem) {
-            return oldItem.maxWeight == newItem.maxWeight;
+            return oldItem.maxWeight == newItem.maxWeight && oldItem.maxReps == newItem.maxReps;
         }
     };
 
@@ -54,7 +54,25 @@ public class ExercisePRAdapter extends ListAdapter<ExercisePR, ExercisePRAdapter
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ExercisePR item = getItem(position);
         holder.binding.textExerciseName.setText(item.exerciseName);
-        holder.binding.textPrWeight.setText(String.format(Locale.getDefault(), "%.1f kg", item.maxWeight));
+        
+        String nameLower = item.exerciseName.toLowerCase();
+        boolean isBodyweight = "Bodyweight".equalsIgnoreCase(item.equipment) ||
+                               nameLower.contains("push-up") || 
+                               nameLower.contains("push up") ||
+                               nameLower.contains("plank") ||
+                               nameLower.contains("sit-up") ||
+                               nameLower.contains("leg raise");
+
+        if (isBodyweight) {
+            String repsText = String.format(Locale.getDefault(), "%d reps", item.maxReps);
+            if (item.maxWeight > 0) {
+                repsText += String.format(Locale.getDefault(), " (+%.1f kg)", item.maxWeight);
+            }
+            holder.binding.textPrWeight.setText(repsText);
+        } else {
+            holder.binding.textPrWeight.setText(String.format(Locale.getDefault(), "%.1f kg x %d", item.maxWeight, item.maxReps));
+        }
+        
         holder.itemView.setOnClickListener(v -> listener.onPrClick(item));
     }
 

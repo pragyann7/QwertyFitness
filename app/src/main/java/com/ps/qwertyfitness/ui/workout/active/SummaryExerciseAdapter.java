@@ -57,13 +57,25 @@ public class SummaryExerciseAdapter extends RecyclerView.Adapter<SummaryExercise
             float totalWeight = 0;
             binding.layoutSetsDetail.removeAllViews();
             
+            boolean isBodyweight = "Bodyweight".equalsIgnoreCase(exercise.equipment);
+
             for (WorkoutSet set : exercise.sets) {
                 if (set.isCompleted) {
                     completedSets++;
                     totalWeight += (set.weight * set.reps);
                     
                     TextView setView = new TextView(itemView.getContext());
-                    setView.setText(String.format(Locale.getDefault(), "Set %d: %.1f kg x %d", completedSets, set.weight, set.reps));
+                    String detailStr;
+                    if (isBodyweight) {
+                        detailStr = String.format(Locale.getDefault(), "%d reps", set.reps);
+                        if (set.weight > 0) {
+                            detailStr += String.format(Locale.getDefault(), " (+%.1f kg)", set.weight);
+                        }
+                    } else {
+                        detailStr = String.format(Locale.getDefault(), "%.1f kg x %d", set.weight, set.reps);
+                    }
+                    
+                    setView.setText(String.format(Locale.getDefault(), "Set %d: %s", completedSets, detailStr));
                     setView.setTextColor(itemView.getContext().getResources().getColor(R.color.text_secondary, null));
                     setView.setTextSize(14);
                     setView.setPadding(0, 4, 0, 4);

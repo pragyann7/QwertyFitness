@@ -35,14 +35,34 @@ public class ExerciseProgressActivity extends AppCompatActivity {
         binding.recyclerExerciseHistory.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerExerciseHistory.setAdapter(adapter);
 
-        viewModel.getExerciseProgressPoints(exerciseName).observe(this, points -> {
-            if (points != null) {
-                List<TrendGraphView.DataPoint> graphPoints = new ArrayList<>();
-                for (ExerciseProgressPoint p : points) {
-                    graphPoints.add(new TrendGraphView.DataPoint(p.timestamp, p.weight));
+        viewModel.getExerciseDetails(exerciseName).observe(this, exercise -> {
+            String nameLower = exerciseName != null ? exerciseName.toLowerCase() : "";
+            boolean isBodyweight = (exercise != null && "Bodyweight".equalsIgnoreCase(exercise.equipment)) ||
+                                   nameLower.contains("push-up") || 
+                                   nameLower.contains("push up") ||
+                                   nameLower.contains("plank") ||
+                                   nameLower.contains("sit-up") ||
+                                   nameLower.contains("leg raise");
+            
+            viewModel.getExerciseProgressPoints(exerciseName).observe(this, points -> {
+                if (points != null) {
+                    List<TrendGraphView.DataPoint> graphPoints = new ArrayList<>();
+                    for (ExerciseProgressPoint p : points) {
+                        float value = (isBodyweight && p.weight == 0) ? p.reps : p.weight;
+                        graphPoints.add(new TrendGraphView.DataPoint(p.timestamp, value));
+                    }
+                    binding.exerciseGraph.setData(graphPoints, (isBodyweight && !graphPoints.isEmpty() && graphPoints.get(0).value > 50) ? "reps" : (isBodyweight ? "reps/kg" : "kg"));
+
+                    // Better logic for label
+                    String label = "kg";
+                    if (isBodyweight) {
+                        boolean hasWeight = false;
+                        for (ExerciseProgressPoint p : points) if (p.weight > 0) hasWeight = true;
+                        label = hasWeight ? "Extra kg / reps" : "reps";
+                    }
+                    binding.exerciseGraph.setData(graphPoints, label);
                 }
-                binding.exerciseGraph.setData(graphPoints, "kg");
-            }
+            });
         });
 
         viewModel.getExerciseHistory(exerciseName).observe(this, sets -> {

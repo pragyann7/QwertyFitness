@@ -31,7 +31,7 @@ import com.ps.qwertyfitness.data.local.entity.WorkoutSet;
 
 import java.util.concurrent.Executors;
 
-@Database(entities = {UserProfile.class, WorkoutPlan.class, Exercise.class, FoodItem.class, LoggedFood.class, WorkoutSession.class, WorkoutSet.class, WeightEntry.class, PlanExercise.class, BodyMeasurement.class, ProgressPhoto.class, Reminder.class}, version = 25, exportSchema = false)
+@Database(entities = {UserProfile.class, WorkoutPlan.class, Exercise.class, FoodItem.class, LoggedFood.class, WorkoutSession.class, WorkoutSet.class, WeightEntry.class, PlanExercise.class, BodyMeasurement.class, ProgressPhoto.class, Reminder.class}, version = 27, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     
     public abstract UserDao userDao();
@@ -97,6 +97,7 @@ public abstract class AppDatabase extends RoomDatabase {
             long proneYId = insertExerciseIfMissing(dao, "Prone Y-Raises", "Back", "Bodyweight");
             long bicepCurlId = insertExerciseIfMissing(dao, "Dumbbell Bicep Curls", "Biceps", "Dumbbell");
             long hammerCurlId = insertExerciseIfMissing(dao, "Hammer Curls", "Biceps", "Dumbbell");
+            long towelRowId = insertExerciseIfMissing(dao, "Towel Rows", "Back", "Cable");
 
             // Legs
             long bulgarianId = insertExerciseIfMissing(dao, "Bulgarian Split Squats", "Legs", "Dumbbell");

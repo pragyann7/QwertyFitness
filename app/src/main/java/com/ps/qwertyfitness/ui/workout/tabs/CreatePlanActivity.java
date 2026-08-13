@@ -108,26 +108,30 @@ public class CreatePlanActivity extends AppCompatActivity {
                     planExercises.add(pe);
                 }
                 
-                if (editingPlanId != -1) {
-                    repository.updatePlan(plan, planExercises);
-                } else {
-                    repository.insertPlan(plan, planExercises);
-                }
-
-                // Auto-create/update reminder if time is set
+                // Prepare reminder if time is set
+                Reminder reminder = null;
                 if (reminderTime != null && !reminderTime.isEmpty()) {
-                    Reminder reminder = new Reminder();
+                    reminder = new Reminder();
                     reminder.title = "Workout: " + name;
                     reminder.time = reminderTime;
                     reminder.type = "WORKOUT";
                     reminder.repeatDays = selectedDays;
                     reminder.enabled = true;
-                    repository.insertReminder(reminder, () -> {
-                        ReminderManager.scheduleReminder(this, reminder);
-                    });
                 }
+                
+                final Reminder finalReminder = reminder;
+                Runnable onDone = () -> {
+                    if (finalReminder != null) {
+                        ReminderManager.scheduleReminder(this, finalReminder);
+                    }
+                    finish();
+                };
 
-                finish();
+                if (editingPlanId != -1) {
+                    repository.updatePlan(plan, planExercises, reminder, onDone);
+                } else {
+                    repository.insertPlan(plan, planExercises, reminder, onDone);
+                }
             }
         });
     }

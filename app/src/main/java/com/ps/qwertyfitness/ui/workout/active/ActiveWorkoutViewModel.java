@@ -89,7 +89,16 @@ public class ActiveWorkoutViewModel extends AndroidViewModel {
             for (ActiveExercise ae : activeExercises) {
                 WorkoutSet last = repository.getLatestSetForExercise(ae.name);
                 if (last != null) {
-                    ae.previousSession = String.format(Locale.getDefault(), "Last: %.1f kg x %d", last.weight, last.reps);
+                    boolean isBodyweight = "Bodyweight".equalsIgnoreCase(ae.equipment);
+                    if (isBodyweight) {
+                        String lastStr = String.format(Locale.getDefault(), "Last: %d reps", last.reps);
+                        if (last.weight > 0) {
+                            lastStr += String.format(Locale.getDefault(), " (+%.1f kg)", last.weight);
+                        }
+                        ae.previousSession = lastStr;
+                    } else {
+                        ae.previousSession = String.format(Locale.getDefault(), "Last: %.1f kg x %d", last.weight, last.reps);
+                    }
                 }
             }
             if (onComplete != null) onComplete.run();
@@ -108,29 +117,44 @@ public class ActiveWorkoutViewModel extends AndroidViewModel {
             int prsBroken = 0;
             
             for (ActiveExercise ae : activeExercises) {
-                float previousMax = repository.getMaxWeightForExercise(ae.name);
-                float sessionMax = 0;
+                float previousMaxWeight = repository.getMaxWeightForExercise(ae.name);
+                int previousMaxReps = repository.getMaxRepsForExercise(ae.name);
+                
+                float sessionMaxWeight = 0;
+                int sessionMaxReps = 0;
                 boolean hasCompletedSet = false;
 
                 for (WorkoutSet set : ae.sets) {
                     if (set.isCompleted) {
                         set.exerciseName = ae.name;
+                        set.exerciseId = ae.exerciseId;
                         allSets.add(set);
                         totalVolume += (set.weight * set.reps);
                         totalSets++;
-                        if (set.weight > sessionMax) sessionMax = set.weight;
+                        
+                        if (set.weight > sessionMaxWeight) sessionMaxWeight = set.weight;
+                        if (set.reps > sessionMaxReps) sessionMaxReps = set.reps;
+                        
                         hasCompletedSet = true;
                     }
                 }
 
-                if (hasCompletedSet && sessionMax > previousMax) {
-                    prsBroken++;
+                if (hasCompletedSet) {
+                    // Unified PR detection: Higher weight OR same weight with more reps
+                    if (sessionMaxWeight > previousMaxWeight) {
+                        prsBroken++;
+                    } else if (sessionMaxWeight == previousMaxWeight && sessionMaxReps > previousMaxReps) {
+                        prsBroken++;
+                    }
                 }
             }
             
             currentSession.totalVolume = (int) totalVolume;
             currentSession.totalSets = totalSets;
             currentSession.totalPRs = prsBroken;
+
+            // Mark as done in schedule
+            repository.logActivityCompletion("Workout: " + currentSession.planName);
             
             final int finalPrs = prsBroken;
             repository.insertSession(currentSession, allSets, () -> {

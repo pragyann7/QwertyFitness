@@ -16,6 +16,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    flavorDimensions += "environment"
+
+    productFlavors {
+        create("production") {
+            dimension = "environment"
+            applicationId = "com.ps.qwertyfitness"
+        }
+
+        create("development") {
+            dimension = "environment"
+            applicationId = "com.ps.qwertyfitness.dev"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

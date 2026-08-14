@@ -18,6 +18,7 @@ public class ReminderAdapter extends ListAdapter<Reminder, ReminderAdapter.ViewH
     public interface OnReminderChangeListener {
         void onToggle(Reminder reminder, boolean isEnabled);
         void onDelete(Reminder reminder);
+        void onEdit(Reminder reminder);
     }
 
     public ReminderAdapter(OnReminderChangeListener listener) {
@@ -66,6 +67,10 @@ public class ReminderAdapter extends ListAdapter<Reminder, ReminderAdapter.ViewH
 
             binding.switchReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 listener.onToggle(reminder, isChecked);
+            });
+
+            binding.getRoot().setOnClickListener(v -> {
+                listener.onEdit(reminder);
             });
 
             binding.getRoot().setOnLongClickListener(v -> {

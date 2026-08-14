@@ -5,6 +5,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.FrameLayout;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -71,7 +73,21 @@ public class StreakDetailActivity extends AppCompatActivity {
             this.workoutDates = dates;
             updateCalendar();
             updateStats();
+            updateStreakStatus();
         });
+    }
+
+    private void updateStreakStatus() {
+        String todayStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        boolean hasWorkoutToday = workoutDates != null && workoutDates.contains(todayStr);
+
+        if (hasWorkoutToday) {
+            binding.textStreakStatus.setText("Great job! You've secured your streak for today.");
+            binding.textStreakStatus.setTextColor(getResources().getColor(R.color.accent_electric_lime, null));
+        } else {
+            binding.textStreakStatus.setText("Work out today to keep your streak!");
+            binding.textStreakStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
+        }
     }
 
     private void updateCalendar() {
@@ -121,44 +137,36 @@ public class StreakDetailActivity extends AppCompatActivity {
         if (workoutDates == null || workoutDates.isEmpty()) return 0;
         
         List<String> sortedDates = new ArrayList<>(workoutDates);
-        sortedDates.sort(java.util.Collections.reverseOrder());
+        java.util.Collections.sort(sortedDates);
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         int maxStreak = 0;
         int currentStreak = 0;
-        
-        if (sortedDates.isEmpty()) return 0;
+        String prevDate = null;
 
-        try {
-            Date firstDate = sdf.parse(sortedDates.get(0));
-            if (firstDate == null) return 0;
+        for (String dateStr : sortedDates) {
+            if (prevDate == null) {
+                currentStreak = 1;
+            } else {
+                try {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(sdf.parse(prevDate));
+                    cal.add(Calendar.DAY_OF_YEAR, 1);
+                    String expectedDate = sdf.format(cal.getTime());
 
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(firstDate);
-            
-            for (int i = 0; i < sortedDates.size(); i++) {
-                if (i > 0) {
-                    Calendar expected = (Calendar) cal.clone();
-                    expected.add(Calendar.DAY_OF_YEAR, -1);
-                    String expectedDate = sdf.format(expected.getTime());
-                    
-                    if (sortedDates.get(i).equals(expectedDate)) {
+                    if (dateStr.equals(expectedDate)) {
                         currentStreak++;
-                        cal.setTime(expected.getTime());
                     } else {
                         maxStreak = Math.max(maxStreak, currentStreak);
                         currentStreak = 1;
-                        Date nextDate = sdf.parse(sortedDates.get(i));
-                        if (nextDate != null) cal.setTime(nextDate);
                     }
-                } else {
+                } catch (Exception e) {
                     currentStreak = 1;
                 }
             }
-            maxStreak = Math.max(maxStreak, currentStreak);
-        } catch (Exception e) {
-            return 0;
+            prevDate = dateStr;
         }
+        maxStreak = Math.max(maxStreak, currentStreak);
         
         return maxStreak;
     }
@@ -194,21 +202,62 @@ public class StreakDetailActivity extends AppCompatActivity {
             }
 
             String key = dateKeySdf.format(date);
-            if (workoutDates.contains(key)) {
-                holder.binding.viewWorkoutIndicator.setVisibility(View.VISIBLE);
-                holder.binding.textCalendarDay.setTextColor(getResources().getColor(R.color.accent_electric_lime, null));
+            boolean hasCurrent = workoutDates.contains(key);
+            
+            if (hasCurrent) {
+                holder.binding.viewStreakBackground.setVisibility(View.VISIBLE);
+                holder.binding.textCalendarDay.setTextColor(getResources().getColor(R.color.background_deep_charcoal, null));
+                
+                // Connection Logic (Duolingo Style)
+                boolean hasPrev = false;
+                if (position % 7 != 0 && position > 0) {
+                    String prevKey = dateKeySdf.format(days.get(position - 1));
+                    hasPrev = workoutDates.contains(prevKey);
+                }
+                
+                boolean hasNext = false;
+                if (position % 7 != 6 && position < days.size() - 1) {
+                    String nextKey = dateKeySdf.format(days.get(position + 1));
+                    hasNext = workoutDates.contains(nextKey);
+                }
+
+                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) holder.binding.viewStreakBackground.getLayoutParams();
+                
+                if (hasPrev && hasNext) {
+                    holder.binding.viewStreakBackground.setBackgroundResource(R.drawable.shape_streak_middle);
+                    params.leftMargin = 0;
+                    params.rightMargin = 0;
+                } else if (hasPrev) {
+                    holder.binding.viewStreakBackground.setBackgroundResource(R.drawable.shape_streak_end);
+                    params.leftMargin = 0;
+                    params.rightMargin = 12;
+                } else if (hasNext) {
+                    holder.binding.viewStreakBackground.setBackgroundResource(R.drawable.shape_streak_start);
+                    params.leftMargin = 12;
+                    params.rightMargin = 0;
+                } else {
+                    holder.binding.viewStreakBackground.setBackgroundResource(R.drawable.shape_streak_single);
+                    params.leftMargin = 12;
+                    params.rightMargin = 12;
+                }
+                holder.binding.viewStreakBackground.setLayoutParams(params);
             } else {
-                holder.binding.viewWorkoutIndicator.setVisibility(View.GONE);
+                holder.binding.viewStreakBackground.setVisibility(View.GONE);
                 holder.binding.textCalendarDay.setTextColor(getResources().getColor(R.color.text_primary, null));
+                
+                // Today highlight outline
+                String today = dateKeySdf.format(new Date());
+                if (key.equals(today)) {
+                    holder.binding.textCalendarDay.setBackgroundResource(R.drawable.shape_circle_outline);
+                    // Ensure the outline is visible even on dark background
+                    android.graphics.drawable.GradientDrawable gd = (android.graphics.drawable.GradientDrawable) holder.binding.textCalendarDay.getBackground();
+                    if (gd != null) gd.setStroke(3, getResources().getColor(R.color.accent_electric_lime, null));
+                } else {
+                    holder.binding.textCalendarDay.setBackground(null);
+                }
             }
             
-            // Today highlight
-            String today = dateKeySdf.format(new Date());
-            if (key.equals(today)) {
-                holder.binding.textCalendarDay.setBackgroundResource(R.drawable.shape_circle_outline);
-            } else {
-                holder.binding.textCalendarDay.setBackground(null);
-            }
+            holder.binding.viewWorkoutIndicator.setVisibility(View.GONE);
         }
 
         @Override

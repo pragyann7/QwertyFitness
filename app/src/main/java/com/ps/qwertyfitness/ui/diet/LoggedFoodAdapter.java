@@ -46,7 +46,10 @@ public class LoggedFoodAdapter extends RecyclerView.Adapter<LoggedFoodAdapter.Vi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         LoggedFood item = items.get(position);
         holder.binding.textFoodName.setText(item.foodName);
-        holder.binding.textFoodInfo.setText(String.format(Locale.getDefault(), "%s • %.0f g • %.0f kcal", item.mealType, item.quantity, item.calories));
+        
+        String unitStr = item.unit != null ? item.unit : "g";
+        holder.binding.textFoodInfo.setText(String.format(Locale.getDefault(), "%s • %.0f %s • %.0f kcal", 
+                item.mealType, item.quantity, unitStr, item.calories));
         
         holder.itemView.setOnLongClickListener(v -> {
             listener.onFoodDelete(item);

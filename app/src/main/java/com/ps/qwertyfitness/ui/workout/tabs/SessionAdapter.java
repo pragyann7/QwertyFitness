@@ -21,6 +21,7 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHold
 
     public interface OnSessionClickListener {
         void onSessionClick(WorkoutSession session);
+        void onSessionLongClick(WorkoutSession session);
     }
 
     public SessionAdapter(OnSessionClickListener listener) {
@@ -55,6 +56,10 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.ViewHold
         }
 
         holder.itemView.setOnClickListener(v -> listener.onSessionClick(item));
+        holder.itemView.setOnLongClickListener(v -> {
+            listener.onSessionLongClick(item);
+            return true;
+        });
     }
 
     @Override

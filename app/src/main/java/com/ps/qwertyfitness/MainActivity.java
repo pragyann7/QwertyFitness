@@ -46,6 +46,11 @@ public class MainActivity extends AppCompatActivity {
         if (navHostFragment != null) {
             NavController navController = navHostFragment.getNavController();
             NavigationUI.setupWithNavController(navView, navController);
+            
+            // Handle shortcut from widget
+            if ("START_WORKOUT".equals(getIntent().getStringExtra("ACTION"))) {
+                navController.navigate(R.id.navigation_workout);
+            }
         }
     }
 

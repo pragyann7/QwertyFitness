@@ -97,4 +97,16 @@ public interface WorkoutDao {
 
     @Query("DELETE FROM plan_exercises WHERE planId = :planId")
     void deletePlanExercisesByPlanId(long planId);
+
+    @Query("DELETE FROM workout_sessions WHERE id = :sessionId")
+    void deleteSessionById(long sessionId);
+
+    @Query("DELETE FROM workout_sets WHERE sessionId = :sessionId")
+    void deleteSetsBySessionId(long sessionId);
+
+    @Transaction
+    default void deleteFullSession(long sessionId) {
+        deleteSetsBySessionId(sessionId);
+        deleteSessionById(sessionId);
+    }
 }

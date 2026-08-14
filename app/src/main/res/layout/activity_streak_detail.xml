@@ -43,7 +43,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="32dp">
+                    android:padding="20dp">
 
                     <ImageView
                         android:layout_width="80dp"
@@ -68,6 +68,15 @@
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:letterSpacing="0.2" />
+
+                    <TextView
+                        android:id="@+id/text_streak_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Work out today to keep your streak!"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

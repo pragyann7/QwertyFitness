@@ -84,6 +84,10 @@ public class WorkoutViewModel extends AndroidViewModel {
         repository.deletePlans(planIds);
     }
 
+    public void deleteSession(long sessionId) {
+        repository.deleteSession(sessionId);
+    }
+
     private static class SearchFilter {
         String query;
         String muscleGroup;

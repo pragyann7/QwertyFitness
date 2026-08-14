@@ -47,8 +47,10 @@ public class FitnessRepository {
     private final WaterDao waterDao;
     private final LiveData<UserProfile> userProfile;
     private final ExecutorService databaseWriteExecutor = Executors.newFixedThreadPool(4);
+    private final Application application;
 
     public FitnessRepository(Application application) {
+        this.application = application;
         AppDatabase db = AppDatabase.getDatabase(application);
         userDao = db.userDao();
         foodDao = db.foodDao();
@@ -99,11 +101,17 @@ public class FitnessRepository {
     }
 
     public void logFood(LoggedFood loggedFood) {
-        databaseWriteExecutor.execute(() -> foodDao.logFood(loggedFood));
+        databaseWriteExecutor.execute(() -> {
+            foodDao.logFood(loggedFood);
+            updateWidget();
+        });
     }
 
     public void deleteLoggedFood(LoggedFood loggedFood) {
-        databaseWriteExecutor.execute(() -> foodDao.deleteLoggedFood(loggedFood));
+        databaseWriteExecutor.execute(() -> {
+            foodDao.deleteLoggedFood(loggedFood);
+            updateWidget();
+        });
     }
 
     public LiveData<List<LoggedFood>> getLoggedFoodsForDate(String date) {
@@ -311,7 +319,17 @@ public class FitnessRepository {
     }
 
     public void updateSession(WorkoutSession session) {
-        databaseWriteExecutor.execute(() -> workoutDao.updateSession(session));
+        databaseWriteExecutor.execute(() -> {
+            workoutDao.updateSession(session);
+            updateWidget();
+        });
+    }
+
+    public void deleteSession(long sessionId) {
+        databaseWriteExecutor.execute(() -> {
+            workoutDao.deleteFullSession(sessionId);
+            updateWidget();
+        });
     }
 
     // Weight methods
@@ -436,11 +454,17 @@ public class FitnessRepository {
     }
 
     public void logWater(WaterLog log) {
-        databaseWriteExecutor.execute(() -> waterDao.insert(log));
+        databaseWriteExecutor.execute(() -> {
+            waterDao.insert(log);
+            updateWidget();
+        });
     }
 
     public void deleteLastWaterLog(String date) {
-        databaseWriteExecutor.execute(() -> waterDao.deleteLastLogForDate(date));
+        databaseWriteExecutor.execute(() -> {
+            waterDao.deleteLastLogForDate(date);
+            updateWidget();
+        });
     }
 
     public void logActivityCompletion(String activityName) {
@@ -456,6 +480,7 @@ public class FitnessRepository {
             activity.calories = 0;
             activity.isActivity = true;
             foodDao.logFood(activity);
+            updateWidget();
         });
     }
 
@@ -466,11 +491,16 @@ public class FitnessRepository {
                 for (LoggedFood log : logs) {
                     if (activityName.equalsIgnoreCase(log.mealType) && log.isActivity) {
                         foodDao.deleteLoggedFood(log);
+                        updateWidget();
                         break;
                     }
                 }
             }
         });
+    }
+
+    private void updateWidget() {
+        com.ps.qwertyfitness.widgets.DailyProgressWidget.updateAllWidgets(application);
     }
 
     public void deleteReminder(Reminder reminder) {

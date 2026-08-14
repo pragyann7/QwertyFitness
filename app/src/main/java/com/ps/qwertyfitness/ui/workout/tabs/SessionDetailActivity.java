@@ -57,6 +57,18 @@ public class SessionDetailActivity extends AppCompatActivity {
         }
 
         binding.btnBack.setOnClickListener(v -> finish());
+        
+        binding.btnDeleteSession.setOnClickListener(v -> {
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                    .setTitle("Delete Workout")
+                    .setMessage("Are you sure you want to delete this workout from your history?")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        viewModel.deleteSession(sessionId);
+                        finish();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
 
         SummaryExerciseAdapter adapter = new SummaryExerciseAdapter();
         binding.recyclerDetailExercises.setLayoutManager(new LinearLayoutManager(this));

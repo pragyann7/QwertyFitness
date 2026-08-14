@@ -33,17 +33,32 @@ public class HistoryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireParentFragment()).get(WorkoutViewModel.class);
         
-        adapter = new SessionAdapter(session -> {
-            Intent intent = new Intent(getActivity(), SessionDetailActivity.class);
-            intent.putExtra("SESSION_ID", session.id);
-            intent.putExtra("PLAN_NAME", session.planName);
-            intent.putExtra("DATE", session.date);
-            intent.putExtra("VOLUME", session.totalVolume);
-            intent.putExtra("SETS", session.totalSets);
-            intent.putExtra("PRS", session.totalPRs);
-            intent.putExtra("DURATION", (session.endTime - session.startTime));
-            intent.putExtra("NOTES", session.note);
-            startActivity(intent);
+        adapter = new SessionAdapter(new SessionAdapter.OnSessionClickListener() {
+            @Override
+            public void onSessionClick(com.ps.qwertyfitness.data.local.entity.WorkoutSession session) {
+                Intent intent = new Intent(getActivity(), SessionDetailActivity.class);
+                intent.putExtra("SESSION_ID", session.id);
+                intent.putExtra("PLAN_NAME", session.planName);
+                intent.putExtra("DATE", session.date);
+                intent.putExtra("VOLUME", session.totalVolume);
+                intent.putExtra("SETS", session.totalSets);
+                intent.putExtra("PRS", session.totalPRs);
+                intent.putExtra("DURATION", (session.endTime - session.startTime));
+                intent.putExtra("NOTES", session.note);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onSessionLongClick(com.ps.qwertyfitness.data.local.entity.WorkoutSession session) {
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Delete Workout")
+                        .setMessage("Are you sure you want to delete this workout from your history?")
+                        .setPositiveButton("Delete", (dialog, which) -> {
+                            viewModel.deleteSession(session.id);
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            }
         });
         binding.recyclerHistory.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerHistory.setAdapter(adapter);

@@ -22,4 +22,7 @@ public interface WaterDao {
     
     @Query("DELETE FROM water_logs WHERE id = (SELECT id FROM water_logs WHERE date = :date ORDER BY timestamp DESC LIMIT 1)")
     void deleteLastLogForDate(String date);
+
+    @Query("SELECT SUM(amountMl) FROM water_logs WHERE date = :date")
+    Integer getTotalWaterForDateSync(String date);
 }

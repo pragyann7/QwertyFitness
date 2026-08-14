@@ -10,9 +10,10 @@ public class FoodItem {
     public long id;
     
     public String name;
-    public float calories; // Per 100g
+    public float calories; 
     public float protein;
     public float carbs;
     public float fat;
     public String category;
+    public String unit; // "g", "pc", "ml"
 }

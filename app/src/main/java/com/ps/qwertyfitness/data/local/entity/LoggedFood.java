@@ -15,6 +15,7 @@ public class LoggedFood {
     public float protein;
     public float carbs;
     public float fat;
+    public String unit; // "g", "pc", "ml"
     
     public String date; // YYYY-MM-DD
     public String mealType; // Breakfast, Lunch, Snack, Dinner

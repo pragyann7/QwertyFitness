@@ -62,6 +62,14 @@ public class AddFoodBottomSheet extends BottomSheetDialogFragment {
         adapter = new FoodSearchAdapter(food -> {
             selectedFood = food;
             binding.layoutQuantity.setVisibility(View.VISIBLE);
+            
+            // Update hint based on unit
+            String hint = "Quantity";
+            if ("pc".equals(food.unit)) hint = "Quantity (pieces)";
+            else if ("g".equals(food.unit)) hint = "Quantity (grams)";
+            else if ("ml".equals(food.unit)) hint = "Quantity (ml)";
+            binding.editQuantity.setHint(hint);
+            
             binding.editQuantity.requestFocus();
         });
         
@@ -90,14 +98,21 @@ public class AddFoodBottomSheet extends BottomSheetDialogFragment {
                 String qtyStr = binding.editQuantity.getText().toString();
                 if (!qtyStr.isEmpty()) {
                     float qty = Float.parseFloat(qtyStr);
+                    
+                    // Logic: If unit is 'g' or 'ml', database value is per 100. 
+                    // If unit is 'pc', database value is per 1 piece.
+                    boolean isPerHundred = "g".equalsIgnoreCase(selectedFood.unit) || "ml".equalsIgnoreCase(selectedFood.unit);
+                    float multiplier = isPerHundred ? qty / 100.0f : qty;
+                    
                     LoggedFood log = new LoggedFood();
                     log.foodItemId = selectedFood.id;
                     log.foodName = selectedFood.name;
                     log.quantity = qty;
-                    log.calories = (selectedFood.calories * qty) / 100;
-                    log.protein = (selectedFood.protein * qty) / 100;
-                    log.carbs = (selectedFood.carbs * qty) / 100;
-                    log.fat = (selectedFood.fat * qty) / 100;
+                    log.unit = selectedFood.unit;
+                    log.calories = selectedFood.calories * multiplier;
+                    log.protein = selectedFood.protein * multiplier;
+                    log.carbs = selectedFood.carbs * multiplier;
+                    log.fat = selectedFood.fat * multiplier;
                     log.date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
                     log.mealType = binding.dropdownMealType.getText().toString();
                     

@@ -28,6 +28,9 @@ public class OnboardingActivity extends AppCompatActivity {
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         
+        // Force a widget refresh on startup to clear any stale data (e.g. after clearing app data)
+        com.ps.qwertyfitness.widgets.DailyProgressWidget.updateAllWidgets(getApplicationContext());
+
         repository = new FitnessRepository(getApplication());
         
         splashScreen.setKeepOnScreenCondition(() -> !isReady);
@@ -35,7 +38,12 @@ public class OnboardingActivity extends AppCompatActivity {
         repository.getUserProfile().observe(this, profile -> {
             isReady = true;
             if (profile != null) {
-                startActivity(new Intent(this, MainActivity.class));
+                Intent mainIntent = new Intent(this, MainActivity.class);
+                // Forward any action from widget (e.g. START_WORKOUT)
+                if (getIntent().hasExtra("ACTION")) {
+                    mainIntent.putExtra("ACTION", getIntent().getStringExtra("ACTION"));
+                }
+                startActivity(mainIntent);
                 finish();
             }
         });

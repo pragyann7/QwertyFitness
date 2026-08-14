@@ -18,7 +18,7 @@ public interface FoodDao {
     @Query("SELECT * FROM food_items WHERE name LIKE :query")
     LiveData<List<FoodItem>> searchFood(String query);
     
-    @Insert(onConflict = androidx.room.OnConflictStrategy.IGNORE)
+    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     void insertFoodItem(FoodItem foodItem);
     
     @Insert
@@ -47,4 +47,10 @@ public interface FoodDao {
 
     @Query("SELECT SUM(fat) FROM logged_foods WHERE date = :date AND isActivity = 0")
     LiveData<Float> getTotalFatForDate(String date);
+
+    @Query("SELECT SUM(calories) FROM logged_foods WHERE date = :date AND isActivity = 0")
+    Float getTotalCaloriesSync(String date);
+
+    @Query("SELECT SUM(protein) FROM logged_foods WHERE date = :date AND isActivity = 0")
+    Float getTotalProteinSync(String date);
 }

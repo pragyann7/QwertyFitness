@@ -33,7 +33,7 @@ import com.ps.qwertyfitness.data.local.entity.WorkoutSet;
 
 import java.util.concurrent.Executors;
 
-@Database(entities = {UserProfile.class, WorkoutPlan.class, Exercise.class, FoodItem.class, LoggedFood.class, WorkoutSession.class, WorkoutSet.class, WeightEntry.class, PlanExercise.class, BodyMeasurement.class, ProgressPhoto.class, Reminder.class, WaterLog.class}, version = 28, exportSchema = false)
+@Database(entities = {UserProfile.class, WorkoutPlan.class, Exercise.class, FoodItem.class, LoggedFood.class, WorkoutSession.class, WorkoutSet.class, WeightEntry.class, PlanExercise.class, BodyMeasurement.class, ProgressPhoto.class, Reminder.class, WaterLog.class}, version = 29, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     
     public abstract UserDao userDao();
@@ -48,6 +48,20 @@ public abstract class AppDatabase extends RoomDatabase {
     
     private static volatile AppDatabase INSTANCE;
     
+    private static final RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
+        @Override
+        public void onCreate(@NonNull SupportSQLiteDatabase db) {
+            super.onCreate(db);
+            // Context is needed for widget updates
+        }
+
+        @Override
+        public void onOpen(@NonNull SupportSQLiteDatabase db) {
+            super.onOpen(db);
+            // Data is seeded in getDatabase to ensure context is available
+        }
+    };
+
     public static AppDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
@@ -57,27 +71,14 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addCallback(sRoomDatabaseCallback)
                             .fallbackToDestructiveMigration()
                             .build();
+                    seedData(context.getApplicationContext());
                 }
             }
         }
         return INSTANCE;
     }
 
-    private static final RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
-        @Override
-        public void onCreate(@NonNull SupportSQLiteDatabase db) {
-            super.onCreate(db);
-            seedData();
-        }
-
-        @Override
-        public void onOpen(@NonNull SupportSQLiteDatabase db) {
-            super.onOpen(db);
-            seedData();
-        }
-    };
-
-    private static void seedData() {
+    private static void seedData(Context context) {
         Executors.newSingleThreadExecutor().execute(() -> {
             if (INSTANCE == null) return;
 
@@ -176,12 +177,35 @@ public abstract class AppDatabase extends RoomDatabase {
             }
 
             // Seed Food
-            if (foodDao.getAllFoodItemsSync().isEmpty()) {
-                foodDao.insertFoodItem(createFood("Chicken Breast", 165, 31, 0, 3.6f, "Meat"));
-                foodDao.insertFoodItem(createFood("Brown Rice", 111, 2.6f, 23, 0.9f, "Grains"));
-                foodDao.insertFoodItem(createFood("Oatmeal", 68, 2.4f, 12, 1.4f, "Grains"));
-                foodDao.insertFoodItem(createFood("Whole Egg", 155, 13, 1.1f, 11, "Dairy"));
-            }
+            foodDao.insertFoodItem(createFood("Chicken Breast", 165, 31, 0, 3.6f, "Meat", "g"));
+            foodDao.insertFoodItem(createFood("Brown Rice", 111, 2.6f, 23, 0.9f, "Grains", "g"));
+            foodDao.insertFoodItem(createFood("Oatmeal", 68, 2.4f, 12, 1.4f, "Grains", "g"));
+            foodDao.insertFoodItem(createFood("Whole Egg", 78, 6.3f, 0.6f, 5, "Dairy", "pc"));
+            
+            // New Foods
+            foodDao.insertFoodItem(createFood("Wheat Flour Crepe (Roti)", 120, 4, 22, 2, "Grains", "pc"));
+            foodDao.insertFoodItem(createFood("Milk", 80, 3.2f, 4.5f, 4.2f, "Dairy", "ml"));
+            foodDao.insertFoodItem(createFood("Curd", 61, 3.5f, 4.7f, 3.3f, "Dairy", "g"));
+            foodDao.insertFoodItem(createFood("White Milled Rice", 130, 2.7f, 28, 0.3f, "Grains", "g"));
+            foodDao.insertFoodItem(createFood("Moong Lentils", 105, 7, 19, 0.4f, "Legumes", "g"));
+            foodDao.insertFoodItem(createFood("Maas Lentils", 105, 7.5f, 18, 0.5f, "Legumes", "g"));
+            foodDao.insertFoodItem(createFood("Raw Black Chickpeas", 360, 19, 61, 6, "Legumes", "g"));
+            foodDao.insertFoodItem(createFood("Soaked Soya Chunks", 100, 15, 8, 0.5f, "Plant Protein", "g"));
+            foodDao.insertFoodItem(createFood("Gourd Potato Curry", 80, 1.5f, 12, 4, "Vegetable", "g"));
+            foodDao.insertFoodItem(createFood("Cauliflower Potato Curry", 90, 2, 13, 5, "Vegetable", "g"));
+            foodDao.insertFoodItem(createFood("Buffalo Meat", 143, 24, 0, 4.8f, "Meat", "g"));
+            foodDao.insertFoodItem(createFood("Fish", 100, 20, 0, 1.5f, "Meat", "g"));
+            
+            // Extra Foods
+            foodDao.insertFoodItem(createFood("Banana", 105, 1.3f, 27, 0.4f, "Fruit", "pc"));
+            foodDao.insertFoodItem(createFood("Peanut Butter", 94, 4, 3, 8, "Fats", "g"));
+            foodDao.insertFoodItem(createFood("Greek Yogurt", 100, 10, 4, 5, "Dairy", "g"));
+            foodDao.insertFoodItem(createFood("Tofu", 76, 8, 1.9f, 4.8f, "Plant Protein", "g"));
+            foodDao.insertFoodItem(createFood("Apple", 95, 0.5f, 25, 0.3f, "Fruit", "pc"));
+            foodDao.insertFoodItem(createFood("Almonds (10pcs)", 70, 2.5f, 2.5f, 6, "Nuts", "pc"));
+
+            // Refresh widget after reset
+            com.ps.qwertyfitness.widgets.DailyProgressWidget.updateAllWidgets(context);
         });
     }
 
@@ -210,7 +234,7 @@ public abstract class AppDatabase extends RoomDatabase {
         return pe;
     }
 
-    private static FoodItem createFood(String name, float cal, float pro, float carb, float fat, String cat) {
+    private static FoodItem createFood(String name, float cal, float pro, float carb, float fat, String cat, String unit) {
         FoodItem f = new FoodItem();
         f.name = name;
         f.calories = cal;
@@ -218,6 +242,7 @@ public abstract class AppDatabase extends RoomDatabase {
         f.carbs = carb;
         f.fat = fat;
         f.category = cat;
+        f.unit = unit;
         return f;
     }
 }

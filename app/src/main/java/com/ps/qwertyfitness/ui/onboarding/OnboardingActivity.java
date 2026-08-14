@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.splashscreen.SplashScreen;
 
 import android.widget.ArrayAdapter;
 
@@ -20,14 +21,19 @@ public class OnboardingActivity extends AppCompatActivity {
     private final String[] sexes = {"Male", "Female"};
     private final String[] activities = {"Sedentary", "Lightly Active", "Moderately Active", "Very Active"};
     private final String[] goals = {"Lose Fat", "Maintain", "Lean Bulk"};
+    private boolean isReady = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         
         repository = new FitnessRepository(getApplication());
         
+        splashScreen.setKeepOnScreenCondition(() -> !isReady);
+
         repository.getUserProfile().observe(this, profile -> {
+            isReady = true;
             if (profile != null) {
                 startActivity(new Intent(this, MainActivity.class));
                 finish();

@@ -54,6 +54,9 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.material)
     
+    // Splash Screen
+    implementation(libs.splashscreen)
+    
     // Navigation
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)

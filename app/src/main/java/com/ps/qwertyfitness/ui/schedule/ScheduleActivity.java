@@ -64,6 +64,11 @@ public class ScheduleActivity extends AppCompatActivity {
                         .setNegativeButton("Cancel", null)
                         .show();
             }
+
+            @Override
+            public void onEdit(Reminder reminder) {
+                showReminderDialog(reminder);
+            }
         });
 
         binding.recyclerReminders.setLayoutManager(new LinearLayoutManager(this));
@@ -73,10 +78,10 @@ public class ScheduleActivity extends AppCompatActivity {
             adapter.submitList(reminders);
         });
 
-        binding.fabAddReminder.setOnClickListener(v -> showAddReminderDialog());
+        binding.fabAddReminder.setOnClickListener(v -> showReminderDialog(null));
     }
 
-    private void showAddReminderDialog() {
+    private void showReminderDialog(Reminder existingReminder) {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_add_reminder, null);
         AutoCompleteTextView dropdownType = view.findViewById(R.id.dropdown_type);
         EditText editTitle = view.findViewById(R.id.edit_reminder_title);
@@ -96,8 +101,50 @@ public class ScheduleActivity extends AppCompatActivity {
         ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, types);
         dropdownType.setAdapter(typeAdapter);
 
-        final String[] selectedType = {"WORKOUT"};
+        final String[] selectedType = {existingReminder != null ? existingReminder.type : "WORKOUT"};
         
+        // Pre-fill data if editing
+        if (existingReminder != null) {
+            editTitle.setText(existingReminder.title);
+            editTime.setText(existingReminder.time);
+            
+            // Find type index
+            int typePos = 0;
+            String[] internalTypes = {"WORKOUT", "MEAL", "WATER", "WEIGHT"};
+            for (int i = 0; i < internalTypes.length; i++) {
+                if (internalTypes[i].equals(existingReminder.type)) {
+                    typePos = i;
+                    break;
+                }
+            }
+            dropdownType.setText(types[typePos], false);
+            
+            if ("WATER".equals(existingReminder.type)) {
+                layoutInterval.setVisibility(View.VISIBLE);
+                layoutEndTime.setVisibility(View.VISIBLE);
+                if (existingReminder.intervalMinutes > 0) editInterval.setText(String.valueOf(existingReminder.intervalMinutes));
+                if (existingReminder.endTime != null) editEndTime.setText(existingReminder.endTime);
+            } else if ("MEAL".equals(existingReminder.type)) {
+                layoutMealTargets.setVisibility(View.VISIBLE);
+                if (existingReminder.targetValue > 0) editTargetCals.setText(String.valueOf(existingReminder.targetValue));
+                if (existingReminder.targetProtein > 0) editTargetProt.setText(String.valueOf(existingReminder.targetProtein));
+                if (existingReminder.targetCarbs > 0) editTargetCarb.setText(String.valueOf(existingReminder.targetCarbs));
+                if (existingReminder.targetFat > 0) editTargetFat.setText(String.valueOf(existingReminder.targetFat));
+            }
+
+            if (existingReminder.repeatDays != null) {
+                String[] days = existingReminder.repeatDays.split(",");
+                for (String d : days) {
+                    if (!d.trim().isEmpty()) {
+                        int dayIdx = Integer.parseInt(d.trim()) - 1;
+                        if (dayIdx >= 0 && dayIdx < chipGroupDays.getChildCount()) {
+                            ((Chip) chipGroupDays.getChildAt(dayIdx)).setChecked(true);
+                        }
+                    }
+                }
+            }
+        }
+
         dropdownType.setOnItemClickListener((parent, view1, position, id) -> {
             String[] internalTypes = {"WORKOUT", "MEAL", "WATER", "WEIGHT"};
             selectedType[0] = internalTypes[position];
@@ -113,31 +160,42 @@ public class ScheduleActivity extends AppCompatActivity {
         editEndTime.setOnClickListener(v -> pickTime(editEndTime));
 
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Add Reminder")
+                .setTitle(existingReminder != null ? "Edit Reminder" : "Add Reminder")
                 .setView(view)
-                .setPositiveButton("Add", (dialog, which) -> {
+                .setPositiveButton(existingReminder != null ? "Save" : "Add", (dialog, which) -> {
                     String title = editTitle.getText().toString();
                     String time = editTime.getText().toString();
                     String endTime = editEndTime.getText().toString();
                     String intervalStr = editInterval.getText().toString();
                     
                     if (!title.isEmpty() && !time.isEmpty()) {
-                        Reminder reminder = new Reminder();
+                        Reminder reminder = existingReminder != null ? existingReminder : new Reminder();
                         reminder.title = title;
                         reminder.time = time;
                         reminder.type = selectedType[0];
-                        reminder.enabled = true;
+                        
+                        if (existingReminder == null) {
+                            reminder.enabled = true;
+                        }
                         
                         if ("WATER".equals(reminder.type)) {
-                            if (!intervalStr.isEmpty()) reminder.intervalMinutes = Integer.parseInt(intervalStr);
-                            if (!endTime.isEmpty()) reminder.endTime = endTime;
+                            reminder.intervalMinutes = !intervalStr.isEmpty() ? Integer.parseInt(intervalStr) : 0;
+                            reminder.endTime = !endTime.isEmpty() ? endTime : null;
+                        } else {
+                            reminder.intervalMinutes = 0;
+                            reminder.endTime = null;
                         }
 
                         if ("MEAL".equals(reminder.type)) {
-                            if (!editTargetCals.getText().toString().isEmpty()) reminder.targetValue = Integer.parseInt(editTargetCals.getText().toString());
-                            if (!editTargetProt.getText().toString().isEmpty()) reminder.targetProtein = Integer.parseInt(editTargetProt.getText().toString());
-                            if (!editTargetCarb.getText().toString().isEmpty()) reminder.targetCarbs = Integer.parseInt(editTargetCarb.getText().toString());
-                            if (!editTargetFat.getText().toString().isEmpty()) reminder.targetFat = Integer.parseInt(editTargetFat.getText().toString());
+                            reminder.targetValue = !editTargetCals.getText().toString().isEmpty() ? Integer.parseInt(editTargetCals.getText().toString()) : 0;
+                            reminder.targetProtein = !editTargetProt.getText().toString().isEmpty() ? Integer.parseInt(editTargetProt.getText().toString()) : 0;
+                            reminder.targetCarbs = !editTargetCarb.getText().toString().isEmpty() ? Integer.parseInt(editTargetCarb.getText().toString()) : 0;
+                            reminder.targetFat = !editTargetFat.getText().toString().isEmpty() ? Integer.parseInt(editTargetFat.getText().toString()) : 0;
+                        } else {
+                            reminder.targetValue = 0;
+                            reminder.targetProtein = 0;
+                            reminder.targetCarbs = 0;
+                            reminder.targetFat = 0;
                         }
 
                         StringBuilder days = new java.lang.StringBuilder();
@@ -150,11 +208,21 @@ public class ScheduleActivity extends AppCompatActivity {
                         
                         if (days.length() > 0) {
                             reminder.repeatDays = days.substring(0, days.length() - 1);
+                        } else {
+                            reminder.repeatDays = null;
                         }
 
-                        viewModel.insertReminder(reminder, () -> {
-                            ReminderManager.scheduleReminder(ScheduleActivity.this, reminder);
-                        });
+                        if (existingReminder != null) {
+                            viewModel.updateReminder(reminder);
+                            ReminderManager.cancelReminder(ScheduleActivity.this, reminder);
+                            if (reminder.enabled) {
+                                ReminderManager.scheduleReminder(ScheduleActivity.this, reminder);
+                            }
+                        } else {
+                            viewModel.insertReminder(reminder, () -> {
+                                ReminderManager.scheduleReminder(ScheduleActivity.this, reminder);
+                            });
+                        }
                     }
                 })
                 .setNegativeButton("Cancel", null)

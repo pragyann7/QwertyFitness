@@ -50,7 +50,16 @@ public class FoodSearchAdapter extends RecyclerView.Adapter<FoodSearchAdapter.Vi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         FoodItem item = items.get(position);
         holder.binding.textFoodName.setText(item.name);
-        holder.binding.textFoodInfo.setText(String.format(Locale.getDefault(), "%.0f kcal per 100g", item.calories));
+        
+        String unitStr = item.unit != null ? item.unit : "100g";
+        holder.binding.textFoodInfo.setText(String.format(Locale.getDefault(), "%.0f kcal per %s", item.calories, unitStr));
+        
+        if (item.category != null) {
+            holder.binding.textFoodCategory.setText(item.category.toUpperCase());
+            holder.binding.textFoodCategory.setVisibility(android.view.View.VISIBLE);
+        } else {
+            holder.binding.textFoodCategory.setVisibility(android.view.View.GONE);
+        }
 
         // Highlight selection with premium style
         if (selectedPosition == position) {

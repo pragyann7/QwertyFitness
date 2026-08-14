@@ -24,6 +24,7 @@ public class DietViewModel extends AndroidViewModel {
     private final FitnessRepository repository;
     private final LiveData<UserProfile> userProfile;
     private final MutableLiveData<String> searchQuery = new MutableLiveData<>("");
+    private final MutableLiveData<String> selectedCategory = new MutableLiveData<>(null);
     private final LiveData<List<FoodItem>> searchResults;
     private final String today;
 
@@ -33,12 +34,26 @@ public class DietViewModel extends AndroidViewModel {
         userProfile = repository.getUserProfile();
         today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         
-        searchResults = Transformations.switchMap(searchQuery, query -> {
-            if (query == null || query.isEmpty()) {
-                return repository.searchFood(""); // Show all if empty
-            }
-            return repository.searchFood(query);
+        androidx.lifecycle.MediatorLiveData<SearchFilter> combinedFilter = new androidx.lifecycle.MediatorLiveData<>();
+        combinedFilter.addSource(searchQuery, query -> combinedFilter.setValue(new SearchFilter(query, selectedCategory.getValue())));
+        combinedFilter.addSource(selectedCategory, cat -> combinedFilter.setValue(new SearchFilter(searchQuery.getValue(), cat)));
+
+        searchResults = Transformations.switchMap(combinedFilter, filter -> {
+            String query = filter.query != null ? filter.query : "";
+            // We fetch all matching by name first, then filter in memory for speed if category is set
+            // Alternatively, update DAO to handle category filter
+            return Transformations.map(repository.searchFood(query), items -> {
+                if (filter.category == null || filter.category.isEmpty()) return items;
+                List<FoodItem> filtered = new ArrayList<>();
+                for (FoodItem item : items) {
+                    if (filter.category.equalsIgnoreCase(item.category)) filtered.add(item);
+                }
+                return filtered;
+            });
         });
+
+        // Initial trigger
+        searchQuery.setValue("");
     }
 
     public LiveData<UserProfile> getUserProfile() {
@@ -89,7 +104,20 @@ public class DietViewModel extends AndroidViewModel {
         searchQuery.setValue(query);
     }
 
+    public void setSelectedCategory(String category) {
+        selectedCategory.setValue(category);
+    }
+
     public LiveData<List<FoodItem>> getSearchResults() {
         return searchResults;
+    }
+
+    private static class SearchFilter {
+        String query;
+        String category;
+        SearchFilter(String query, String category) {
+            this.query = query;
+            this.category = category;
+        }
     }
 }
